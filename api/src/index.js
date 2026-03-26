@@ -23,7 +23,8 @@ app.get('/api/seed', async (req, res) => {
   const pool = require('./db');
   const bcrypt = require('bcryptjs');
   try {
-    // Clean and rebuild components table
+    // Add must_change_password column if missing, then rebuild components
+    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN DEFAULT TRUE').catch(()=>{});
     await pool.query('DROP TABLE IF EXISTS isqm_components CASCADE').catch(()=>{});
     const schema = fs.readFileSync(path.join(__dirname, 'db/schema.sql'), 'utf8');
     await pool.query(schema);
@@ -55,6 +56,54 @@ app.get('/api/seed', async (req, res) => {
     const components = await pool.query('SELECT COUNT(*) FROM isqm_components');
     const users = await pool.query('SELECT COUNT(*) FROM users');
     res.json({ ok: true, components: parseInt(components.rows[0].count), users: parseInt(users.rows[0].count) });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// Bulk import endpoint
+app.post('/api/import', async (req, res) => {
+  const auth = require('./middleware/auth');
+  // Inline auth check
+  const token = (req.headers.authorization || '').replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No token' });
+  const jwt = require('jsonwebtoken');
+  let decoded;
+  try { decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret'); } catch(e) { return res.status(401).json({ error: 'Invalid token' }); }
+  const userResult = await pool.query('SELECT id, organization_id FROM users WHERE id = $1', [decoded.id]);
+  if (!userResult.rows[0]) return res.status(401).json({ error: 'User not found' });
+  const orgId = userResult.rows[0].organization_id;
+  const userId = userResult.rows[0].id;
+
+  const { type, items } = req.body;
+  if (!type || !Array.isArray(items)) return res.status(400).json({ error: 'type and items[] required' });
+
+  let imported = 0;
+  try {
+    if (type === 'objectives') {
+      for (const item of items) {
+        if (!item.title || !item.component_id) continue;
+        await pool.query('INSERT INTO quality_objectives (organization_id, component_id, title, description, owner_id, status) VALUES ($1,$2,$3,$4,$5,$6)',
+          [orgId, item.component_id, item.title, item.description || '', item.owner_id || userId, item.status || 'draft']);
+        imported++;
+      }
+    } else if (type === 'risks') {
+      for (const item of items) {
+        if (!item.title || !item.component_id) continue;
+        await pool.query(
+          `INSERT INTO quality_risks (organization_id, component_id, title, description, root_cause, inherent_likelihood, inherent_impact, residual_likelihood, residual_impact, owner_id, status, next_review_date)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+          [orgId, item.component_id, item.title, item.description || '', item.root_cause || '', item.inherent_likelihood || 3, item.inherent_impact || 3, item.residual_likelihood || 2, item.residual_impact || 2, item.owner_id || userId, item.status || 'active', item.next_review_date || null]);
+        imported++;
+      }
+    } else if (type === 'deficiencies') {
+      for (const item of items) {
+        if (!item.title) continue;
+        await pool.query(
+          'INSERT INTO deficiencies (organization_id, title, description, severity, root_cause, owner_id, status, due_date) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+          [orgId, item.title, item.description || '', item.severity || 'medium', item.root_cause || '', item.owner_id || userId, item.status || 'open', item.due_date || null]);
+        imported++;
+      }
+    }
+    res.json({ ok: true, type, imported });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 

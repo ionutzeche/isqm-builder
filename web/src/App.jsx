@@ -17,22 +17,24 @@ import ResponsesControlsPage from '@/pages/ResponsesControls';
 import MonitoringPage from '@/pages/Monitoring';
 import DeficienciesPage from '@/pages/Deficiencies';
 import AdminPage from '@/pages/Admin';
+import LoginPage from '@/pages/Login';
+import ImportPage from '@/pages/Import';
 
-const NAV_ITEMS = ['Dashboard','Firm Setup','Quality System','Risk Register','Responses & Controls','Monitoring','Deficiencies','Annual Assessment','Documents','Admin'];
+const NAV_ITEMS = ['Dashboard','Firm Setup','Quality System','Risk Register','Responses & Controls','Monitoring','Deficiencies','Annual Assessment','Documents','Import','Admin'];
 
 const KPI_CARDS = [
   { title: 'Open Quality Risks', value: '29', subtext: '7 high residual · CLA Romania Audit', icon: AlertTriangle },
-  { title: 'Open Deficiencies', value: '4', subtext: 'BUSTEC TB mapping, CPD shortfall', icon: ClipboardList },
+  { title: 'Open Deficiencies', value: '4', subtext: 'File review findings, CPD shortfall', icon: ClipboardList },
   { title: 'Assessment Readiness', value: '72%', subtext: 'First evaluation: Dec 2026', icon: CheckCircle2 },
   { title: 'Controls Requiring Review', value: '8', subtext: 'Next 30 days', icon: Clock3 },
 ];
 
 const SAMPLE_RISKS = [
-  { id: 'QR-5.1', title: 'Insufficient qualified staff for engagement demands', component: 'Resources', practice: 'Audit', inherent: 20, residual: 12, owner: 'Irina Sofron', status: 'Active', nextReview: '2026-04-15', description: 'The firm may not have sufficient qualified audit staff during peak periods (Q1 year-end audits + D300 deadline overlap), creating risk of under-staffed engagement teams.', rootCause: 'CLA Romania has 8 audit staff covering 8 audit clients. 2 open positions unfilled >30 days.' },
-  { id: 'QR-3.1', title: 'Client accepted without adequate risk assessment', component: 'Acceptance & Continuance', practice: 'Audit', inherent: 15, residual: 10, owner: 'Laurentiu Vasile', status: 'Active', nextReview: '2026-05-01', description: 'New audit clients may be accepted without sufficient AML/KYC checks or risk assessment, particularly during periods of rapid growth.', rootCause: 'Client acceptance form redesigned Q1 2026 — not yet tested with all partners. Manual process.' },
-  { id: 'QR-4.2', title: 'Complex matters not escalated for consultation', component: 'Engagement Performance', practice: 'Audit', inherent: 16, residual: 8, owner: 'Laurentiu Vasile', status: 'Mitigated', nextReview: '2026-04-28', description: 'Complex accounting or auditing matters may not be escalated for partner consultation, particularly on non-PIE engagements.', rootCause: 'Consultation policy defines triggers but enforcement relies on team judgment. No automated escalation.' },
-  { id: 'QR-7.2', title: 'Root causes of deficiencies not identified', component: 'Monitoring & Remediation', practice: 'All', inherent: 20, residual: 16, owner: 'Ionut Zeche', status: 'Active', nextReview: '2026-04-30', description: 'When cold file reviews identify issues, the firm may not perform adequate root cause analysis to prevent recurrence.', rootCause: 'Root cause analysis process documented but not yet applied to Q1 findings. First application pending.' },
-  { id: 'QR-2.4', title: 'Inadequate safeguards for independence threats', component: 'Relevant Ethical Requirements', practice: 'Audit', inherent: 15, residual: 10, owner: 'Crina Stancu', status: 'Active', nextReview: '2026-04-15', description: 'Identified threats to independence may not have adequate documented safeguards, particularly for non-listed audit clients.', rootCause: 'Safeguards documentation 80% complete. Remaining 20% covers smaller engagements.' },
+  { id: 'QR-5.1', title: 'Insufficient qualified staff for engagement demands', component: 'Resources', practice: 'Audit', inherent: 20, residual: 12, owner: 'Laurentiu Vasile', status: 'Active', nextReview: '2026-04-15', description: 'The firm may not have sufficient qualified audit staff during peak periods, creating risk of under-staffed engagement teams.', rootCause: 'Audit staff covering multiple clients simultaneously. Open positions unfilled.' },
+  { id: 'QR-3.1', title: 'Client accepted without adequate risk assessment', component: 'Acceptance & Continuance', practice: 'Audit', inherent: 15, residual: 10, owner: 'Laurentiu Vasile', status: 'Active', nextReview: '2026-05-01', description: 'New audit clients may be accepted without sufficient AML/KYC checks or risk assessment.', rootCause: 'Client acceptance form redesigned Q1 2026 — not yet tested with all partners.' },
+  { id: 'QR-4.2', title: 'Complex matters not escalated for consultation', component: 'Engagement Performance', practice: 'Audit', inherent: 16, residual: 8, owner: 'Laurentiu Vasile', status: 'Mitigated', nextReview: '2026-04-28', description: 'Complex accounting or auditing matters may not be escalated for partner consultation.', rootCause: 'Consultation policy defines triggers but enforcement relies on team judgment.' },
+  { id: 'QR-7.2', title: 'Root causes of deficiencies not identified', component: 'Monitoring & Remediation', practice: 'All', inherent: 20, residual: 16, owner: 'Laurentiu Vasile', status: 'Active', nextReview: '2026-04-30', description: 'When cold file reviews identify issues, root cause analysis may not be performed adequately.', rootCause: 'Root cause analysis process documented but not yet applied to findings.' },
+  { id: 'QR-2.4', title: 'Inadequate safeguards for independence threats', component: 'Relevant Ethical Requirements', practice: 'Audit', inherent: 15, residual: 10, owner: 'Roxana Olteanu', status: 'Active', nextReview: '2026-04-15', description: 'Identified threats to independence may not have adequate documented safeguards.', rootCause: 'Safeguards documentation partially complete. Remaining work covers smaller engagements.' },
 ];
 
 const DOCUMENTS = [
@@ -143,7 +145,7 @@ function DashboardPage({ setPage }) {
         </Card>
         <Card className="rounded-3xl"><CardHeader><CardTitle>Priority actions</CardTitle><CardDescription>Items requiring immediate attention.</CardDescription></CardHeader>
           <CardContent className="space-y-4">
-            {['Run Q1 client acceptance review (overdue)', 'Apply root cause analysis to cold file findings (BUSTEC, Farmexpert)', 'Complete safeguards documentation — 20% remaining (Crina S.)', 'Define quality infrastructure budget (Ionut Z.)', 'Staff turnover retention programme (Irina S.)', 'Draft CAFR transparency report (Laurentiu V.)'].map((item) => (
+            {['Run Q1 client acceptance review (overdue)', 'Apply root cause analysis to cold file review findings', 'Complete safeguards documentation — remaining 20%', 'Define quality infrastructure budget allocation', 'Draft CAFR transparency report (Laurentiu V.)', 'Complete CPD catch-up training for shortfall staff'].map((item) => (
               <div key={item} className="rounded-2xl border p-4 text-sm text-slate-700">{item}</div>
             ))}
           </CardContent>
@@ -325,6 +327,20 @@ function PlaceholderPage({ title, subtitle, icon: Icon }) {
 
 export default function App() {
   const [page, setPage] = useState('Dashboard');
+  const [user, setUser] = useState(null);
+
+  // Check for existing session
+  React.useEffect(() => {
+    const token = localStorage.getItem('isqm_token');
+    if (token) {
+      import('@/api').then(({ default: api }) => {
+        api.get('/api/auth/me').then(r => setUser(r.data)).catch(() => { localStorage.removeItem('isqm_token'); });
+      });
+    }
+  }, []);
+
+  if (!user) return <LoginPage onLogin={setUser} />;
+
   const pages = {
     Dashboard: <DashboardPage setPage={setPage} />,
     'Firm Setup': <FirmSetupPage />,
@@ -335,6 +351,7 @@ export default function App() {
     Deficiencies: <DeficienciesPage />,
     'Annual Assessment': <AnnualAssessmentPage />,
     Documents: <DocumentsPage />,
+    Import: <ImportPage />,
     Admin: <AdminPage />,
   };
 

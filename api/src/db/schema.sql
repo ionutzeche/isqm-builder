@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   organization_id UUID REFERENCES organizations(id),
   role TEXT CHECK (role IN ('admin','quality_partner','contributor','reviewer','viewer')) DEFAULT 'contributor',
+  must_change_password BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
