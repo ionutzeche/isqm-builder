@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS service_lines (
 
 CREATE TABLE IF NOT EXISTS isqm_components (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL,
+  name TEXT NOT NULL UNIQUE,
   description TEXT,
   order_index INT NOT NULL
 );

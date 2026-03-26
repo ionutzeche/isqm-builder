@@ -23,6 +23,8 @@ app.get('/api/seed', async (req, res) => {
   const pool = require('./db');
   const bcrypt = require('bcryptjs');
   try {
+    // Clean duplicate components if any, then run schema
+    await pool.query('DELETE FROM isqm_components WHERE id NOT IN (SELECT MIN(id) FROM isqm_components GROUP BY name)').catch(()=>{});
     const schema = fs.readFileSync(path.join(__dirname, 'db/schema.sql'), 'utf8');
     await pool.query(schema);
     const orgResult = await pool.query(
