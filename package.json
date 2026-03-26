@@ -1,0 +1,12 @@
+{
+  "name": "isqm-builder",
+  "private": true,
+  "workspaces": ["api", "web"],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=api\" \"npm run dev --workspace=web\"",
+    "seed": "npm run seed --workspace=api"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
