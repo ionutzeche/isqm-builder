@@ -1,6 +1,7 @@
 const { Pool } = require('pg');
+const connStr = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING;
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL?.includes('localhost') ? false : { rejectUnauthorized: false }
+  connectionString: connStr,
+  ssl: connStr?.includes('localhost') ? false : { rejectUnauthorized: false }
 });
 module.exports = pool;
