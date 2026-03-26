@@ -19,8 +19,10 @@ import DeficienciesPage from '@/pages/Deficiencies';
 import AdminPage from '@/pages/Admin';
 import LoginPage from '@/pages/Login';
 import ImportPage from '@/pages/Import';
+import RiskEntryPage from '@/pages/RiskEntry';
+import HelpPage from '@/pages/Help';
 
-const NAV_ITEMS = ['Dashboard','Firm Setup','Quality System','Risk Register','Responses & Controls','Monitoring','Deficiencies','Annual Assessment','Documents','Import','Admin'];
+const NAV_ITEMS = ['Dashboard','Firm Setup','Quality System','Risk Register','Add Risk','Responses & Controls','Monitoring','Deficiencies','Annual Assessment','Documents','Import','Help','Admin'];
 
 const KPI_CARDS = [
   { title: 'Open Quality Risks', value: '29', subtext: '7 high residual · CLA Romania Audit', icon: AlertTriangle },
@@ -91,7 +93,7 @@ function Sidebar({ page, setPage }) {
 
 function TopBar() {
   return (
-    <div className="sticky top-0 z-20 border-b bg-white/80 backdrop-blur-md">
+    <div className="sticky top-0 z-20 border-b border-slate-800 bg-slate-950/80 backdrop-blur-md">
       <div className="flex items-center justify-between gap-4 px-6 py-4">
         <div>
           <div className="text-sm text-slate-500">System of Quality Management</div>
@@ -351,7 +353,9 @@ export default function App() {
     Deficiencies: <DeficienciesPage />,
     'Annual Assessment': <AnnualAssessmentPage />,
     Documents: <DocumentsPage />,
+    'Add Risk': <RiskEntryPage onBack={() => setPage('Risk Register')} />,
     Import: <ImportPage />,
+    Help: <HelpPage />,
     Admin: <AdminPage />,
   };
 
