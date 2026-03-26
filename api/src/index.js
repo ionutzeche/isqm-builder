@@ -34,11 +34,23 @@ app.get('/api/seed', async (req, res) => {
     );
     const orgId = orgResult.rows[0]?.id;
     if (orgId) {
-      const hash = await bcrypt.hash('admin123', 10);
-      await pool.query(
-        `INSERT INTO users (email, name, password_hash, organization_id, role)
-         VALUES ('admin@cla.com.ro', 'Ionut Zeche', $1, $2, 'admin')
-         ON CONFLICT (email) DO NOTHING`, [hash, orgId]);
+      // Clear existing users and re-seed with approved list only
+      await pool.query('DELETE FROM users WHERE organization_id = $1', [orgId]);
+      const hash = await bcrypt.hash('cla2026', 10);
+      const staff = [
+        ['laurentiu.vasile@cla.com.ro','Laurentiu Vasile','admin'],
+        ['alina.ene@cla.com.ro','Alina Ene','contributor'],
+        ['qasim.ranjha@cla.com.ro','Qasim Ranjha','contributor'],
+        ['marfa.arif@cla.com.ro','Marfa Arif','contributor'],
+        ['roxana.olteanu@cla.com.ro','Roxana Olteanu','contributor'],
+        ['george.chiriac@cla.com.ro','George Chiriac','contributor'],
+      ];
+      for (const [email, name, role] of staff) {
+        await pool.query(
+          `INSERT INTO users (email, name, password_hash, organization_id, role)
+           VALUES ($1, $2, $3, $4, $5) ON CONFLICT (email) DO NOTHING`,
+          [email, name, hash, orgId, role]);
+      }
     }
     const components = await pool.query('SELECT COUNT(*) FROM isqm_components');
     const users = await pool.query('SELECT COUNT(*) FROM users');

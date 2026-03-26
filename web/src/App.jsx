@@ -12,6 +12,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Progress } from '@/components/ui/progress';
 import { Search, Bell, Building2, ShieldCheck, AlertTriangle, FileText, ClipboardList, LayoutDashboard, Settings, ChevronRight, CheckCircle2, Clock3, Users, FolderKanban } from 'lucide-react';
 import { motion } from 'framer-motion';
+import QualitySystemPage from '@/pages/QualitySystem';
+import ResponsesControlsPage from '@/pages/ResponsesControls';
+import MonitoringPage from '@/pages/Monitoring';
+import DeficienciesPage from '@/pages/Deficiencies';
+import AdminPage from '@/pages/Admin';
 
 const NAV_ITEMS = ['Dashboard','Firm Setup','Quality System','Risk Register','Responses & Controls','Monitoring','Deficiencies','Annual Assessment','Documents','Admin'];
 
@@ -323,14 +328,14 @@ export default function App() {
   const pages = {
     Dashboard: <DashboardPage setPage={setPage} />,
     'Firm Setup': <FirmSetupPage />,
-    'Quality System': <PlaceholderPage title="Quality System" subtitle="Build quality objectives by ISQM-1 component, map risks, and design the system architecture." icon={FolderKanban} />,
+    'Quality System': <QualitySystemPage />,
     'Risk Register': <RiskRegisterPage />,
-    'Responses & Controls': <PlaceholderPage title="Responses & Controls" subtitle="Link risks to responses, define controls, assign owners, and track effectiveness." icon={ShieldCheck} />,
-    Monitoring: <PlaceholderPage title="Monitoring" subtitle="Log monitoring activities, cold file reviews, record findings, and create deficiencies." icon={ClipboardList} />,
-    Deficiencies: <PlaceholderPage title="Deficiencies" subtitle="Track remediation actions, overdue items, closure evidence, and root cause analysis." icon={AlertTriangle} />,
+    'Responses & Controls': <ResponsesControlsPage />,
+    Monitoring: <MonitoringPage />,
+    Deficiencies: <DeficienciesPage />,
     'Annual Assessment': <AnnualAssessmentPage />,
     Documents: <DocumentsPage />,
-    Admin: <PlaceholderPage title="Admin" subtitle="Users, roles, permissions, audit log, and system settings." icon={Settings} />,
+    Admin: <AdminPage />,
   };
 
   return (
