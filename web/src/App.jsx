@@ -24,7 +24,7 @@ const NAV_ITEMS = ['Dashboard','Firm Setup','Quality System','Risk Register','Re
 
 const KPI_CARDS = [
   { title: 'Open Quality Risks', value: '29', subtext: '7 high residual · CLA Romania Audit', icon: AlertTriangle },
-  { title: 'Open Deficiencies', value: '4', subtext: 'File review findings, CPD shortfall', icon: ClipboardList },
+  { title: 'Open Deficiencies', value: '4', subtext: 'File review findings, CPD compliance', icon: ClipboardList },
   { title: 'Assessment Readiness', value: '72%', subtext: 'First evaluation: Dec 2026', icon: CheckCircle2 },
   { title: 'Controls Requiring Review', value: '8', subtext: 'Next 30 days', icon: Clock3 },
 ];
@@ -63,7 +63,7 @@ function MetaRow({ label, value }) { return <div className="space-y-1"><div clas
 
 function Sidebar({ page, setPage }) {
   return (
-    <aside className="hidden md:flex md:w-72 md:flex-col border-r bg-white/70 backdrop-blur-sm">
+    <aside className="hidden md:flex md:w-72 md:flex-col border-r border-slate-800 bg-slate-900/70 backdrop-blur-sm">
       <div className="p-5 border-b">
         <div className="flex items-center gap-3">
           <div className="h-11 w-11 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-sm"><ShieldCheck className="h-5 w-5" /></div>
@@ -138,14 +138,14 @@ function DashboardPage({ setPage }) {
       <div className="grid gap-4 xl:grid-cols-3 mt-6">
         <Card className="rounded-3xl xl:col-span-2"><CardHeader><CardTitle>Risk by component — CLA Romania</CardTitle><CardDescription>Residual risk concentration. Focus: Resources and Monitoring & Remediation.</CardDescription></CardHeader>
           <CardContent className="space-y-4">
-            {[['Governance & Leadership', 15, 'Ionut Zeche'], ['Relevant Ethical Requirements', 20, 'Crina Stancu'], ['Acceptance & Continuance', 35, 'Laurentiu Vasile'], ['Engagement Performance', 30, 'Laurentiu Vasile'], ['Resources', 40, 'Irina Sofron'], ['Information & Communication', 25, 'Irina Sofron'], ['Monitoring & Remediation', 50, 'Laurentiu Vasile'], ['Risk Assessment Process', 22, 'Ionut Zeche']].map(([label, pct, owner]) => (
+            {[['Governance & Leadership', 15, 'Laurentiu Vasile'], ['Relevant Ethical Requirements', 20, 'Roxana Olteanu'], ['Acceptance & Continuance', 35, 'Laurentiu Vasile'], ['Engagement Performance', 30, 'Laurentiu Vasile'], ['Resources', 40, 'Alina Ene'], ['Information & Communication', 25, 'Qasim Ranjha'], ['Monitoring & Remediation', 50, 'Laurentiu Vasile'], ['Risk Assessment Process', 22, 'George Chiriac']].map(([label, pct, owner]) => (
               <div key={label} className="space-y-2"><div className="flex items-center justify-between text-sm"><span className="text-slate-700">{label}</span><span className="text-slate-500">{owner} · {pct}%</span></div><Progress value={pct} className="h-2" /></div>
             ))}
           </CardContent>
         </Card>
         <Card className="rounded-3xl"><CardHeader><CardTitle>Priority actions</CardTitle><CardDescription>Items requiring immediate attention.</CardDescription></CardHeader>
           <CardContent className="space-y-4">
-            {['Run Q1 client acceptance review (overdue)', 'Apply root cause analysis to cold file review findings', 'Complete safeguards documentation — remaining 20%', 'Define quality infrastructure budget allocation', 'Draft CAFR transparency report (Laurentiu V.)', 'Complete CPD catch-up training for shortfall staff'].map((item) => (
+            {['Run Q1 client acceptance review (overdue)', 'Apply root cause analysis to cold file review findings', 'Complete safeguards documentation — remaining work', 'Define quality infrastructure budget allocation', 'Draft CAFR transparency report', 'Complete CPD catch-up training for shortfall staff'].map((item) => (
               <div key={item} className="rounded-2xl border p-4 text-sm text-slate-700">{item}</div>
             ))}
           </CardContent>
@@ -223,10 +223,10 @@ function AnnualAssessmentPage() {
         </TabsContent>
         <TabsContent value="deficiencies"><Card className="rounded-3xl"><CardHeader><CardTitle>Deficiency review — CLA Romania</CardTitle></CardHeader>
           <CardContent className="space-y-4">{[
-            ['DEF-001: Audit file review notes not cleared (Farmexpert)', 'High', 'In remediation'],
+            ['DEF-001: Audit file review notes not cleared (Engagement A)', 'High', 'In remediation'],
             ['DEF-002: Engagement letters missing 2026 terms', 'Minor', 'Remediated'],
             ['DEF-003: CPD shortfall for 2 staff', 'Moderate', 'In remediation'],
-            ['DEF-004: CaseWare TB mapping exceptions (BUSTEC)', 'Minor', 'Open'],
+            ['DEF-004: CaseWare TB mapping exceptions (Engagement B)', 'Minor', 'Open'],
           ].map(([item, sev, status]) => (
             <div key={item} className="rounded-2xl border p-4 flex items-center justify-between gap-4"><div><div className="font-medium">{item}</div><div className="text-sm text-slate-500 mt-1">{sev} severity</div></div><StatusBadge value={status === 'Remediated' ? 'Approved' : status === 'Open' ? 'Active' : 'In Review'} /></div>
           ))}</CardContent></Card>
@@ -248,7 +248,7 @@ function AnnualAssessmentPage() {
         </TabsContent>
         <TabsContent value="signoff"><Card className="rounded-3xl"><CardHeader><CardTitle>Sign-off — CLA Romania</CardTitle></CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid gap-4 lg:grid-cols-3"><Input className="rounded-2xl" defaultValue="Laurentiu Vasile — Quality Partner" /><Input className="rounded-2xl" defaultValue="Ionut Zeche — Managing Partner" /><Input className="rounded-2xl" defaultValue="Partner Board" /></div>
+            <div className="grid gap-4 lg:grid-cols-3"><Input className="rounded-2xl" defaultValue="Laurentiu Vasile — Quality Partner" /><Input className="rounded-2xl" defaultValue="Laurentiu Vasile — Quality Partner" /><Input className="rounded-2xl" defaultValue="Partner Board" /></div>
             <div className="flex items-start gap-3 rounded-2xl border p-4"><Checkbox id="declare" className="mt-1" /><label htmlFor="declare" className="text-sm text-slate-700 leading-6">I confirm that the annual assessment has considered changes in circumstances, open deficiencies, response effectiveness, and unresolved high-risk matters before approval. This assessment is submitted for CAFR compliance.</label></div>
             <Button className="rounded-2xl">Approve annual assessment</Button>
           </CardContent></Card>
@@ -277,7 +277,7 @@ function DocumentsPage() {
             <Separator />
             <div className="text-xs uppercase tracking-wide text-slate-500">Section 2</div>
             <h3 className="text-xl font-semibold">Governance and leadership</h3>
-            <p className="text-slate-700 leading-7">Quality governance is led by Ionut Zeche (Managing Partner) with Laurentiu Vasile appointed as Quality & Risk Partner. Quality is discussed at every partner meeting and forms part of partner performance evaluation.</p>
+            <p className="text-slate-700 leading-7">Quality governance is led by Laurentiu Vasile as Quality & Risk Partner. Quality is discussed at every partner meeting and forms part of partner performance evaluation.</p>
           </div></CardContent>
         </Card>
         <Card className="rounded-3xl"><CardHeader><CardTitle>Metadata</CardTitle></CardHeader>
@@ -356,7 +356,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen bg-slate-950 text-slate-100">
       <div className="flex min-h-screen">
         <Sidebar page={page} setPage={setPage} />
         <main className="flex-1 min-w-0"><TopBar /><div className="p-6 lg:p-8">{pages[page] || <DashboardPage setPage={setPage} />}</div></main>
