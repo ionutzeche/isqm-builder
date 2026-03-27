@@ -22,7 +22,16 @@ import ImportPage from '@/pages/Import';
 import RiskEntryPage from '@/pages/RiskEntry';
 import HelpPage from '@/pages/Help';
 
-const NAV_ITEMS = ['Dashboard','Firm Setup','Quality System','Risk Register','Add Risk','Responses & Controls','Monitoring','Deficiencies','Annual Assessment','Documents','Import','Help','Admin'];
+const NAV_GROUPS = [
+  { label: 'Overview', items: ['Dashboard'] },
+  { label: 'Setup', items: ['Firm Setup', 'Quality System'] },
+  { label: 'Risk & Response', items: ['Risk Register', 'Add Risk', 'Responses & Controls'] },
+  { label: 'Operations', items: ['Monitoring', 'Deficiencies'] },
+  { label: 'Reporting', items: ['Annual Assessment', 'Documents'] },
+  { label: 'System', items: ['Import', 'Help', 'Admin'] },
+];
+const NAV_ITEMS = NAV_GROUPS.flatMap(g => g.items);
+const NAV_ICONS = { Dashboard: LayoutDashboard, 'Firm Setup': Building2, 'Quality System': FolderKanban, 'Risk Register': AlertTriangle, 'Add Risk': AlertTriangle, 'Responses & Controls': ShieldCheck, Monitoring: ClipboardList, Deficiencies: AlertTriangle, 'Annual Assessment': CheckCircle2, Documents: FileText, Import: FileText, Help: FileText, Admin: Settings };
 
 const KPI_CARDS = [
   { title: 'Open Quality Risks', value: '29', subtext: '7 high residual · CLA Romania Audit', icon: AlertTriangle },
@@ -63,51 +72,69 @@ function SeverityBadge({ score }) {
 function Section({ title, body }) { return <div className="rounded-2xl border p-4"><div className="text-sm text-slate-500 mb-2">{title}</div><div className="text-sm text-slate-700 leading-6">{body}</div></div>; }
 function MetaRow({ label, value }) { return <div className="space-y-1"><div className="text-slate-500">{label}</div><div className="text-slate-900 font-medium">{value}</div></div>; }
 
-function Sidebar({ page, setPage }) {
+function Sidebar({ page, setPage, onLogout }) {
   return (
-    <aside className="hidden md:flex md:w-72 md:flex-col border-r bg-white/70 backdrop-blur-sm">
-      <div className="p-5 border-b">
+    <aside className="hidden md:flex md:w-64 md:flex-col border-r border-slate-200 bg-white">
+      <div className="p-4 border-b border-slate-100">
         <div className="flex items-center gap-3">
-          <div className="h-11 w-11 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-sm"><ShieldCheck className="h-5 w-5" /></div>
-          <div><div className="font-semibold text-slate-900">ISQM-1 Builder</div><div className="text-sm text-slate-500">CLA Romania · Audit</div></div>
+          <img src="https://www.claglobal.com/media/z5ymuotz/cla-global-logo-0902.png" alt="CLA" className="h-5" />
+          <div className="h-4 w-px bg-slate-200" />
+          <div className="text-sm font-semibold text-slate-900">ISQM-1 Builder</div>
         </div>
       </div>
-      <ScrollArea className="flex-1 p-3">
-        <div className="space-y-1">
-          {NAV_ITEMS.map((item) => (
-            <button key={item} onClick={() => setPage(item)} className={cn('w-full rounded-2xl px-4 py-3 text-left text-sm transition flex items-center justify-between', item === page ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100')}>
-              <span>{item}</span><ChevronRight className="h-4 w-4 opacity-60" />
-            </button>
-          ))}
-        </div>
-        <div className="mt-6 p-4 rounded-2xl bg-slate-50 border">
-          <div className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Compliance status</div>
-          <div className="text-2xl font-semibold text-slate-900 mb-1">72%</div>
-          <Progress value={72} className="h-2 mb-2" />
-          <div className="text-xs text-slate-500">22 of 29 quality objectives addressed. First annual evaluation: Dec 2026.</div>
-        </div>
+      <ScrollArea className="flex-1 py-2">
+        {NAV_GROUPS.map(group => (
+          <div key={group.label} className="px-3 mb-1">
+            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-3 pt-3 pb-1">{group.label}</div>
+            {group.items.map(item => {
+              const Icon = NAV_ICONS[item] || FileText;
+              const active = item === page;
+              return (
+                <button key={item} onClick={() => setPage(item)}
+                  className={cn('w-full rounded-xl px-3 py-2 text-left text-[13px] transition flex items-center gap-2.5',
+                    active ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50')}>
+                  <Icon className={cn('h-3.5 w-3.5 flex-shrink-0', active ? 'text-white' : 'text-slate-400')} />
+                  <span className="truncate">{item}</span>
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </ScrollArea>
+      <div className="p-3 border-t border-slate-100">
+        <div className="p-3 rounded-xl bg-slate-50 mb-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Readiness</span>
+            <span className="text-xs font-semibold text-slate-700">72%</span>
+          </div>
+          <Progress value={72} className="h-1.5" />
+          <div className="text-[10px] text-slate-400 mt-1.5">CAFR evaluation: Dec 2026</div>
+        </div>
+        {onLogout && <button onClick={onLogout} className="w-full text-left text-xs text-slate-400 hover:text-slate-600 transition px-3 py-1.5">Sign out</button>}
+      </div>
     </aside>
   );
 }
 
-function TopBar() {
+function TopBar({ user }) {
   return (
-    <div className="sticky top-0 z-20 border-b bg-white/80 backdrop-blur-md">
-      <div className="flex items-center justify-between gap-4 px-6 py-4">
-        <div>
-          <div className="text-sm text-slate-500">System of Quality Management</div>
-          <div className="flex items-center gap-3 mt-1 flex-wrap">
-            <StatusBadge value="Draft" />
-            <Badge variant="outline" className="rounded-full">7 high residual risks</Badge>
-            <Badge variant="outline" className="rounded-full">4 open deficiencies</Badge>
-            <Badge variant="outline" className="rounded-full">CAFR evaluation: Dec 2026</Badge>
-          </div>
-        </div>
+    <div className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur-md">
+      <div className="flex items-center justify-between gap-4 px-6 h-14">
         <div className="flex items-center gap-3">
-          <div className="relative hidden lg:block"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><Input className="w-72 rounded-2xl pl-9" placeholder="Search risks, controls, documents..." /></div>
-          <Button variant="outline" size="icon" className="rounded-2xl"><Bell className="h-4 w-4" /></Button>
-          <Button variant="outline" className="rounded-2xl gap-2"><Building2 className="h-4 w-4" /> CLA Romania</Button>
+          <StatusBadge value="Draft" />
+          <span className="text-xs text-slate-400 hidden sm:inline">SoQM Version 1.0 — March 2026</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="relative hidden lg:block">
+            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+            <Input className="w-56 rounded-xl pl-8 h-8 text-xs" placeholder="Search..." />
+          </div>
+          <div className="flex items-center gap-2 pl-2 border-l border-slate-100 ml-1">
+            <div className="h-7 w-7 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold">
+              {user?.name?.split(' ').map(n => n[0]).join('') || 'U'}
+            </div>
+            <span className="text-xs text-slate-600 hidden sm:inline">{user?.name || 'User'}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -341,6 +368,7 @@ export default function App() {
     }
   }, []);
 
+  function handleLogout() { localStorage.removeItem('isqm_token'); setUser(null); }
   if (!user) return <LoginPage onLogin={setUser} />;
 
   const pages = {
@@ -362,8 +390,8 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="flex min-h-screen">
-        <Sidebar page={page} setPage={setPage} />
-        <main className="flex-1 min-w-0"><TopBar /><div className="p-6 lg:p-8">{pages[page] || <DashboardPage setPage={setPage} />}</div></main>
+        <Sidebar page={page} setPage={setPage} onLogout={handleLogout} />
+        <main className="flex-1 min-w-0"><TopBar user={user} /><div className="p-6 lg:p-8">{pages[page] || <DashboardPage setPage={setPage} />}</div></main>
       </div>
     </div>
   );
