@@ -28,12 +28,17 @@ app.get('/api/seed', async (req, res) => {
     await pool.query('DROP TABLE IF EXISTS isqm_components CASCADE').catch(()=>{});
     const schema = fs.readFileSync(path.join(__dirname, 'db/schema.sql'), 'utf8');
     await pool.query(schema);
-    const orgResult = await pool.query(
-      `INSERT INTO organizations (name, jurisdiction, legal_structure, network, partner_count, staff_count)
-       VALUES ('CLA Romania', 'Romania', 'SRL', 'CLA Global', 4, 42)
-       ON CONFLICT DO NOTHING RETURNING id`
-    );
-    const orgId = orgResult.rows[0]?.id;
+    // Find or create org
+    let orgId;
+    const existingOrg = await pool.query(`SELECT id FROM organizations WHERE name = 'CLA Romania' LIMIT 1`);
+    if (existingOrg.rows.length) {
+      orgId = existingOrg.rows[0].id;
+    } else {
+      const newOrg = await pool.query(
+        `INSERT INTO organizations (name, jurisdiction, legal_structure, network, partner_count, staff_count)
+         VALUES ('CLA Romania', 'Romania', 'SRL', 'CLA Global', 4, 40) RETURNING id`);
+      orgId = newOrg.rows[0].id;
+    }
     if (orgId) {
       // Clear existing users and re-seed with approved list only
       await pool.query('DELETE FROM users WHERE organization_id = $1', [orgId]);
