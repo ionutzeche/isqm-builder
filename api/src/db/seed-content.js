@@ -132,6 +132,13 @@ module.exports = {
     ]
   },
 
+  // Security Incident Management Procedure — supports Component F + cybersecurity
+  securityProcedure: {
+    source: 'Procedura de management al incidentelor de securitate a informatiei — UPDATED',
+    isqmComponents: ['F', 'E'],
+    relevance: 'Incident reporting via ticketing system (BSD), analysis and resolution process, periodic review, roles (IT dept, employees, dept managers, Group leadership). Supports Component F (Information & Communication) information security controls and Component E (Resources) technology resources. Referenced by: Politica de securitate a informatiilor, Procedura de administrare a documentelor.',
+  },
+
   sprintTasks: [
     { task: 'CLIENT ACCEPTANCE / CONTINUANCE & AML PROCEDURE UPDATE', priority: 'P0', responsible: 'Diana (Corporate)', deadline: '2026-03-09', status: 'Complete', deliverable: 'Integrated CA procedure + ISQM-1 redline (pp.61-75)', notes: 'Diana delivered: (a) Narrative Client Acceptance Procedure (integrated with InScope AML) and (b) Client Acceptance Map.' },
     { task: 'AUDIT PROCESS DESCRIPTION UPDATE — CASEWARE CLOUD', priority: 'P0', responsible: 'Laurentiu & Alina', deadline: '2026-03-09', status: 'Complete', deliverable: 'Updated process docs + ISQM-1 audit sections + WP templates', notes: 'All subtasks completed. CaseWare Desktop references replaced with Cloud workflows.' },
