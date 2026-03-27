@@ -28,12 +28,27 @@ app.get('/api/seed', async (req, res) => {
     await pool.query('DROP TABLE IF EXISTS isqm_components CASCADE').catch(()=>{});
     const schema = fs.readFileSync(path.join(__dirname, 'db/schema.sql'), 'utf8');
     await pool.query(schema);
-    // Find or create org
+    // Clean slate: remove all orphaned orgs and data, keep one org
+    // First find if any users exist to identify their org
+    const existingUsers = await pool.query(`SELECT DISTINCT organization_id FROM users WHERE email = 'laurentiu.vasile@cla.com.ro' LIMIT 1`);
     let orgId;
-    const existingOrg = await pool.query(`SELECT id FROM organizations WHERE name = 'CLA Romania' LIMIT 1`);
-    if (existingOrg.rows.length) {
-      orgId = existingOrg.rows[0].id;
+    if (existingUsers.rows.length) {
+      orgId = existingUsers.rows[0].organization_id;
+      // Delete all other orgs
+      await pool.query('DELETE FROM organizations WHERE id != $1', [orgId]).catch(()=>{});
+      // Update this org
+      await pool.query(`UPDATE organizations SET name='CLA Romania', jurisdiction='Romania', legal_structure='SRL', network='CLA Global', partner_count=4, staff_count=40 WHERE id=$1`, [orgId]);
     } else {
+      // No users yet — clean everything and start fresh
+      await pool.query('DELETE FROM remediation_actions').catch(()=>{});
+      await pool.query('DELETE FROM deficiencies').catch(()=>{});
+      await pool.query('DELETE FROM monitoring_activities').catch(()=>{});
+      await pool.query('DELETE FROM risk_responses').catch(()=>{});
+      await pool.query('DELETE FROM responses').catch(()=>{});
+      await pool.query('DELETE FROM quality_risks').catch(()=>{});
+      await pool.query('DELETE FROM quality_objectives').catch(()=>{});
+      await pool.query('DELETE FROM users').catch(()=>{});
+      await pool.query('DELETE FROM organizations').catch(()=>{});
       const newOrg = await pool.query(
         `INSERT INTO organizations (name, jurisdiction, legal_structure, network, partner_count, staff_count)
          VALUES ('CLA Romania', 'Romania', 'SRL', 'CLA Global', 4, 40) RETURNING id`);
@@ -217,6 +232,114 @@ app.post('/api/import', async (req, res) => {
       }
     }
     res.json({ ok: true, type, imported });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// Full reset — wipes everything and re-seeds from scratch
+app.get('/api/reset', async (req, res) => {
+  const pool = require('./db');
+  const bcrypt = require('bcryptjs');
+  const fs = require('fs');
+  const path = require('path');
+  try {
+    // Drop all data tables and recreate
+    await pool.query('DROP TABLE IF EXISTS remediation_actions CASCADE');
+    await pool.query('DROP TABLE IF EXISTS deficiencies CASCADE');
+    await pool.query('DROP TABLE IF EXISTS monitoring_activities CASCADE');
+    await pool.query('DROP TABLE IF EXISTS risk_responses CASCADE');
+    await pool.query('DROP TABLE IF EXISTS controls CASCADE');
+    await pool.query('DROP TABLE IF EXISTS responses CASCADE');
+    await pool.query('DROP TABLE IF EXISTS quality_risks CASCADE');
+    await pool.query('DROP TABLE IF EXISTS quality_objectives CASCADE');
+    await pool.query('DROP TABLE IF EXISTS documents CASCADE');
+    await pool.query('DROP TABLE IF EXISTS annual_assessments CASCADE');
+    await pool.query('DROP TABLE IF EXISTS service_lines CASCADE');
+    await pool.query('DROP TABLE IF EXISTS practices CASCADE');
+    await pool.query('DROP TABLE IF EXISTS offices CASCADE');
+    await pool.query('DROP TABLE IF EXISTS audit_log CASCADE');
+    await pool.query('DROP TABLE IF EXISTS users CASCADE');
+    await pool.query('DROP TABLE IF EXISTS isqm_components CASCADE');
+    await pool.query('DROP TABLE IF EXISTS organizations CASCADE');
+    // Recreate schema
+    const schema = fs.readFileSync(path.join(__dirname, 'db/schema.sql'), 'utf8');
+    await pool.query(schema);
+    // Create org
+    const orgResult = await pool.query(
+      `INSERT INTO organizations (name, jurisdiction, legal_structure, network, partner_count, staff_count)
+       VALUES ('CLA Romania', 'Romania', 'SRL', 'CLA Global', 4, 40) RETURNING id`);
+    const orgId = orgResult.rows[0].id;
+    // Create users
+    const hash = await bcrypt.hash('cla2026', 10);
+    const staff = [
+      ['ionut.zeche@cla.com.ro','Ionut Zeche','admin'],
+      ['laurentiu.vasile@cla.com.ro','Laurentiu Vasile','admin'],
+      ['alina.ene@cla.com.ro','Alina Ene','contributor'],
+      ['qasim.ranjha@cla.com.ro','Qasim Ranjha','contributor'],
+      ['marfa.arif@cla.com.ro','Marfa Arif','contributor'],
+      ['roxana.olteanu@cla.com.ro','Roxana Olteanu','contributor'],
+      ['george.chiriac@cla.com.ro','George Chiriac','contributor'],
+    ];
+    for (const [email, name, role] of staff) {
+      await pool.query('INSERT INTO users (email, name, password_hash, organization_id, role, must_change_password) VALUES ($1,$2,$3,$4,$5,true)', [email, name, hash, orgId, role]);
+    }
+    // Seed content
+    const content = require('./db/seed-content');
+    const userMap = {};
+    const uResult = await pool.query('SELECT id, email FROM users WHERE organization_id = $1', [orgId]);
+    uResult.rows.forEach(u => { userMap[u.email] = u.id; });
+    const compResult = await pool.query('SELECT id, order_index FROM isqm_components ORDER BY order_index');
+    const compMap = {};
+    compResult.rows.forEach(c => { compMap[c.order_index] = c.id; });
+    await pool.query('UPDATE organizations SET description = $1 WHERE id = $2', [content.firmProfile.description, orgId]);
+    let objCount=0, riskCount=0, respCount=0;
+    for (const comp of content.components) {
+      const compId = compMap[comp.order]; if (!compId) continue;
+      const ownerId = userMap[comp.ownerEmail] || null;
+      await pool.query('INSERT INTO quality_objectives (organization_id, component_id, title, description, owner_id, status) VALUES ($1,$2,$3,$4,$5,$6)',
+        [orgId, compId, comp.objective, 'Component ' + comp.code + ' — ' + comp.name, ownerId, 'in_progress']);
+      objCount++;
+      for (const risk of comp.risks) {
+        const rating = content.riskScale[risk.rating] || { l: 3, i: 3 };
+        const rr = await pool.query(
+          `INSERT INTO quality_risks (organization_id, component_id, title, description, inherent_likelihood, inherent_impact, residual_likelihood, residual_impact, owner_id, status, next_review_date)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'active','2026-06-30') RETURNING id`,
+          [orgId, compId, risk.text, 'CaseWare ref: ' + (risk.cwRef || ''), rating.l, rating.i, Math.max(1, rating.l - 1), Math.max(1, rating.i - 1), ownerId]);
+        riskCount++;
+        if (risk.policy) {
+          const rResp = await pool.query('INSERT INTO responses (organization_id, title, description, owner_id, frequency, effectiveness_status) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id',
+            [orgId, risk.policy, 'Procedure: ' + (risk.procedure || ''), ownerId, 'annual', 'unknown']);
+          respCount++;
+          await pool.query('INSERT INTO risk_responses (risk_id, response_id) VALUES ($1,$2)', [rr.rows[0].id, rResp.rows[0].id]);
+        }
+      }
+    }
+    // Monitoring
+    let monCount=0;
+    if (content.monitoringActivities) {
+      for (const ma of content.monitoringActivities) {
+        await pool.query('INSERT INTO monitoring_activities (organization_id, title, method, result, notes, performed_at) VALUES ($1,$2,$3,$4,$5,$6)',
+          [orgId, ma.title, ma.method, ma.result, ma.notes, '2025-09-10']);
+        monCount++;
+      }
+    }
+    // Deficiencies
+    let defCount=0;
+    if (content.deficiencies) {
+      for (const def of content.deficiencies) {
+        let defCompId = null;
+        const compMatch = content.components.find(c => c.code === def.component);
+        if (compMatch) defCompId = compMap[compMatch.order];
+        const defResult = await pool.query(
+          'INSERT INTO deficiencies (organization_id, component_id, title, description, severity, root_cause, status, due_date) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id',
+          [orgId, defCompId, def.title, 'Source: ' + def.source, def.severity, def.root_cause, def.status, def.due]);
+        defCount++;
+        if (def.remediation) {
+          await pool.query('INSERT INTO remediation_actions (deficiency_id, description, target_date, status) VALUES ($1,$2,$3,$4)',
+            [defResult.rows[0].id, def.remediation, def.due, 'open']);
+        }
+      }
+    }
+    res.json({ ok: true, reset: true, components: 8, users: staff.length, objectives: objCount, risks: riskCount, responses: respCount, monitoring: monCount, deficiencies: defCount });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
