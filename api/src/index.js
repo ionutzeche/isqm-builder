@@ -39,6 +39,7 @@ app.get('/api/seed', async (req, res) => {
       await pool.query('DELETE FROM users WHERE organization_id = $1', [orgId]);
       const hash = await bcrypt.hash('cla2026', 10);
       const staff = [
+        ['ionut.zeche@cla.com.ro','Ionut Zeche','admin'],
         ['laurentiu.vasile@cla.com.ro','Laurentiu Vasile','admin'],
         ['alina.ene@cla.com.ro','Alina Ene','contributor'],
         ['qasim.ranjha@cla.com.ro','Qasim Ranjha','contributor'],
