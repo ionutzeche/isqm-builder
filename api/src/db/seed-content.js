@@ -89,5 +89,40 @@ module.exports = {
         { text: 'Responses are not aligned with identified risks.', rating: 'Moderate', policy: 'Quality objectives, risks, and responses are documented in CaseWare SQM.', procedure: 'Documentation of risk ratings.', cwRef: 'CaseWare SQM response linkage' },
         { text: 'Risk assessments are not updated regularly.', rating: 'Moderate', policy: 'The risk assessment process is reviewed annually.', procedure: 'Periodic review of the risk assessment.', cwRef: 'Annual SQM review calendar' },
       ]},
+  ],
+
+  // CLA Global Network Review — September 2025
+  monitoringActivities: [
+    { title: 'CLA Global Network Monitoring Review 2025', method: 'inspection', result: 'issue_found', notes: 'Period under review: 2025 (assurance: audits performed in 2025 for FY 2024). Reviewer: Porubcanova. Date: 10 Sep 2025. Overall: Pass with deficiencies in Risk Management, Audit, and Tax.' },
+    { title: 'Audit file review — AMANN Romania SRL', method: 'file_review', result: 'issue_found', notes: 'CLA Global review of AMANN Romania audit file. Finding: Files not closed within 60 days (CaseWare Cloud technical issues). Lock-down deadline missed.' },
+    { title: 'Audit file review — SOMEG Gherla SA', method: 'file_review', result: 'pass', notes: 'CLA Global review of SOMEG Gherla audit file. No significant issues identified.' },
+    { title: 'Tax advisory file review — Elemental', method: 'file_review', result: 'issue_found', notes: 'CLA Global review. Finding: Some delays in onboarding procedures. Insufficient supervision noted.' },
+    { title: 'Tax advisory file review — Adeplast', method: 'file_review', result: 'pass', notes: 'CLA Global review. No significant issues.' },
+    { title: 'Cybersecurity review', method: 'inspection', result: 'pass', notes: 'CLA Global cybersecurity review 2025. Pass — no deficiencies identified.' },
+    { title: 'Independence review', method: 'inspection', result: 'pass', notes: 'Independence declarations and conflict checks reviewed. No breaches identified.' },
+    { title: 'SoQM Design review', method: 'inspection', result: 'issue_found', notes: 'QMH obtained (Version 1.0 from 01.07.2024). Quality objectives and risk matrices present. Finding: evaluation of SoQM effectiveness not performed in 2025 prior to CLA Global monitoring.' },
+  ],
+
+  // Deficiencies from CLA Global Review Results
+  deficiencies: [
+    { title: 'No evaluation of the system of quality management performed in 2025', severity: 'high', component: 'G', root_cause: 'ISQM-1 implemented July 2024 (late start vs 15.12.2022 standard). Design and implementation completed but effectiveness evaluation not yet performed before CLA Global monitoring visit.', remediation: 'Implement the quality evaluation system (internal monitoring process). First annual evaluation by December 2026.', due: '2026-12-31', source: 'CLA Global Network Review 2025 — Risk Management', status: 'open' },
+    { title: 'Audit files not closed within 60 days in CaseWare Cloud', severity: 'high', component: 'D', root_cause: 'Technical issues with CaseWare Cloud version. FY 2024 audit files not locked down within 60-day assembly deadline.', remediation: 'Implement closing of audit files within 60 days. Resolve CaseWare Cloud technical issues. Track file assembly deadlines in Audit Planner.', due: '2026-06-30', source: 'CLA Global Network Review 2025 — Audit & Assurance', status: 'in_progress' },
+    { title: 'Tax engagement onboarding delays and insufficient supervision', severity: 'medium', component: 'C', root_cause: 'Onboarding documentation for existing clients may be dated with some delays due to the transition period. Tax work not consistently reviewed by second person.', remediation: 'Early onboarding procedures for all clients. Setup at least 4-eye review system for each tax engagement (even if partner or manager performs the work).', due: '2026-06-30', source: 'CLA Global Network Review 2025 — Tax & Advisory', status: 'open' },
+    { title: 'ISQM-1 implementation delayed — started July 2024 vs December 2022 requirement', severity: 'medium', component: 'H', root_cause: 'New implementation for the whole firm (all business lines) after network adherence. Significant effort required to build from scratch.', remediation: 'Complete Design phase in CaseWare SQM by 31 March 2026. Sprint 2 calibration April 2026. First annual evaluation December 2026.', due: '2026-03-31', source: 'CLA Global Network Review 2025 — Key Business Changes', status: 'in_progress' },
+  ],
+
+  // Sprint tasks from ISQM1_Tracker_Updated_9Mar2026.xlsx
+  sprintTasks: [
+    { task: 'CLIENT ACCEPTANCE / CONTINUANCE & AML PROCEDURE UPDATE', priority: 'P0', responsible: 'Diana (Corporate)', deadline: '2026-03-09', status: 'Complete', deliverable: 'Integrated CA procedure + ISQM-1 redline (pp.61-75)', notes: 'Diana delivered: (a) Narrative Client Acceptance Procedure (integrated with InScope AML) and (b) Client Acceptance Map.' },
+    { task: 'AUDIT PROCESS DESCRIPTION UPDATE — CASEWARE CLOUD', priority: 'P0', responsible: 'Laurentiu & Alina', deadline: '2026-03-09', status: 'Complete', deliverable: 'Updated process docs + ISQM-1 audit sections + WP templates', notes: 'All subtasks completed. CaseWare Desktop references replaced with Cloud workflows.' },
+    { task: 'Update ISQM-1 Manual audit sections with Cloud references', priority: 'P1', responsible: 'Laurentiu', deadline: '2026-03-08', status: 'Complete', deliverable: 'ISQM-1 redline (audit sections)', notes: 'Completed. Manual updated with CaseWare Cloud references.' },
+    { task: 'Update working paper templates for CaseWare Cloud', priority: 'P1', responsible: 'Marfa / Qasim', deadline: '2026-03-08', status: 'Complete', deliverable: 'Updated WP templates', notes: 'Templates updated to reflect Cloud structure.' },
+    { task: 'Update Audit Process Diagram for CaseWare Cloud', priority: 'P1', responsible: 'Bogdan', deadline: '2026-03-08', status: 'Complete', deliverable: 'Updated Audit Diagram', notes: 'New task added 5 Mar. Diagram updated.' },
+    { task: 'Publish ISQM-1 V1.0 Design in CaseWare SQM', priority: 'P0', responsible: 'Marfa Arif', deadline: '2026-03-31', status: 'In progress', deliverable: 'CaseWare SQM Design published', notes: 'Sprint target. All component content ready. Entry into CaseWare SQM in progress.' },
+    { task: 'Sprint 2: Refine risk definitions for CLA Romania specifics', priority: 'P1', responsible: 'Laurentiu / Marfa', deadline: '2026-04-30', status: 'Not started', deliverable: 'Updated risk descriptions', notes: 'Update risk descriptions to reflect CLA Romania-specific engagement types, client portfolio, and team structure.' },
+    { task: 'Sprint 2: Align policies with CLA Romania procedures', priority: 'P1', responsible: 'Marfa / Qasim', deadline: '2026-04-30', status: 'Not started', deliverable: 'Cross-referenced policies', notes: 'Cross-reference existing CLA Romania Manual sections, SharePoint procedures, and CLA Global policies.' },
+    { task: 'Sprint 2: Integrate engagement quality indicators', priority: 'P1', responsible: 'Alina Ene', deadline: '2026-04-30', status: 'Not started', deliverable: 'Quality indicators per component', notes: 'Define measurable quality indicators per component linked to CaseWare Cloud engagement data.' },
+    { task: 'Sprint 2: Implement monitoring dashboards in CaseWare', priority: 'P1', responsible: 'Alina Ene', deadline: '2026-04-30', status: 'Not started', deliverable: 'CaseWare Operate monitoring', notes: 'Configure monitoring activities in CaseWare Operate module; assign monitoring tasks to MON role.' },
+    { task: 'Sprint 2: German Audit Desk alignment', priority: 'P2', responsible: 'Laurentiu', deadline: '2026-04-30', status: 'Not started', deliverable: 'Extended Component C and D responses', notes: 'Extend Component C and D responses to cover cross-border engagement specifics with dhpg / Oliver Renken.' },
   ]
 };

@@ -119,7 +119,51 @@ app.get('/api/seed', async (req, res) => {
     const objectives = await pool.query('SELECT COUNT(*) FROM quality_objectives WHERE organization_id=$1', [orgId]);
     const risks = await pool.query('SELECT COUNT(*) FROM quality_risks WHERE organization_id=$1', [orgId]);
     const responses = await pool.query('SELECT COUNT(*) FROM responses WHERE organization_id=$1', [orgId]);
-    res.json({ ok: true, components: parseInt(components.rows[0].count), users: parseInt(users.rows[0].count), objectives: parseInt(objectives.rows[0].count), risks: parseInt(risks.rows[0].count), responses: parseInt(responses.rows[0].count), seeded: { objectives: objCount, risks: riskCount, responses: respCount } });
+    // Seed monitoring activities from CLA Global Review
+    let monCount = 0, defCount = 0;
+    if (content.monitoringActivities) {
+      for (const ma of content.monitoringActivities) {
+        const check = await pool.query('SELECT id FROM monitoring_activities WHERE organization_id=$1 AND title=$2', [orgId, ma.title]);
+        if (!check.rows.length) {
+          await pool.query('INSERT INTO monitoring_activities (organization_id, title, method, result, notes, performed_at) VALUES ($1,$2,$3,$4,$5,$6)',
+            [orgId, ma.title, ma.method, ma.result, ma.notes, '2025-09-10']);
+          monCount++;
+        }
+      }
+    }
+
+    // Seed deficiencies from CLA Global Review
+    if (content.deficiencies) {
+      for (const def of content.deficiencies) {
+        const check = await pool.query('SELECT id FROM deficiencies WHERE organization_id=$1 AND title=$2', [orgId, def.title]);
+        if (!check.rows.length) {
+          // Find component ID
+          let defCompId = null;
+          const compMatch = content.components.find(c => c.code === def.component);
+          if (compMatch) defCompId = compMap[compMatch.order];
+
+          const defResult = await pool.query(
+            'INSERT INTO deficiencies (organization_id, component_id, title, description, severity, root_cause, status, due_date) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id',
+            [orgId, defCompId, def.title, 'Source: ' + def.source, def.severity, def.root_cause, def.status, def.due]);
+          defCount++;
+
+          // Add remediation action
+          if (def.remediation) {
+            await pool.query('INSERT INTO remediation_actions (deficiency_id, description, target_date, status) VALUES ($1,$2,$3,$4)',
+              [defResult.rows[0].id, def.remediation, def.due, 'open']);
+          }
+        }
+      }
+    }
+
+    const components = await pool.query('SELECT COUNT(*) FROM isqm_components');
+    const users = await pool.query('SELECT COUNT(*) FROM users');
+    const objectives = await pool.query('SELECT COUNT(*) FROM quality_objectives WHERE organization_id=$1', [orgId]);
+    const risks = await pool.query('SELECT COUNT(*) FROM quality_risks WHERE organization_id=$1', [orgId]);
+    const responses = await pool.query('SELECT COUNT(*) FROM responses WHERE organization_id=$1', [orgId]);
+    const monitoring = await pool.query('SELECT COUNT(*) FROM monitoring_activities WHERE organization_id=$1', [orgId]);
+    const deficiencies = await pool.query('SELECT COUNT(*) FROM deficiencies WHERE organization_id=$1', [orgId]);
+    res.json({ ok: true, components: parseInt(components.rows[0].count), users: parseInt(users.rows[0].count), objectives: parseInt(objectives.rows[0].count), risks: parseInt(risks.rows[0].count), responses: parseInt(responses.rows[0].count), monitoring: parseInt(monitoring.rows[0].count), deficiencies: parseInt(deficiencies.rows[0].count), seeded: { objectives: objCount, risks: riskCount, responses: respCount, monitoring: monCount, deficiencies: defCount } });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
