@@ -133,6 +133,23 @@ module.exports = {
   },
 
   // Security Incident Management Procedure — supports Component F + cybersecurity
+  // Operational forms and registers — direct ISQM-1 evidence documents (Desktop/new folder)
+  operationalForms: [
+    { ref: '1.1', name: 'Annual Independence Statement Form', component: 'B', type: 'form', description: 'Annual independence declarations — staff confirm compliance with independence requirements. Signed by all professional staff.' },
+    { ref: '1.2', name: 'Confidentiality Statement', component: 'B', type: 'form', description: 'Confidentiality statement signed by all personnel. Covers client data, engagement information, and firm intellectual property.' },
+    { ref: '1.3', name: 'Induction — New Employee Form', component: 'E', type: 'checklist', description: 'New employee induction form — onboarding checklist and sign-off. Covers IT setup, system training, policy review, team introduction.' },
+    { ref: '1.7', name: 'Rejected Clients Register', component: 'C', type: 'register', description: 'Register of declined engagements with reasons for rejection. Supports acceptance & continuance process audit trail.' },
+    { ref: '1.11.1', name: 'Background Check Form — Individuals', component: 'C', type: 'form', description: 'Background check form for individual clients — AML/KYC due diligence. PEP screening, beneficial ownership, risk classification.' },
+    { ref: '1.11.2', name: 'Background Check Form — Legal Entities', component: 'C', type: 'form', description: 'Background check form for legal entity clients — AML/KYC due diligence. Corporate structure, UBO identification, sanctions screening.' },
+    { ref: '1.14', name: 'Off-Boarding Checklist', component: 'E', type: 'checklist', description: 'Off-boarding checklist — knowledge transfer, access revocation, equipment return, exit interview. Supports succession planning.' },
+    { ref: '1.15', name: 'Interests Register and Business Affairs', component: 'B', type: 'register', description: 'Register of personal interests, business relationships, and potential conflicts. Updated annually and on trigger events.' },
+    { ref: '1.16', name: 'Consultation Register', component: 'D', type: 'register', description: 'Log of complex technical consultations — accounting, auditing, regulatory matters. Records question, participants, conclusion, implementation.' },
+    { ref: '1.17', name: 'Client Complaints Investigation Form', component: 'F', type: 'form', description: 'Structured investigation form for client complaints. Captures complaint, investigation steps, findings, resolution, follow-up.' },
+    { ref: '1.18', name: 'Complaints Register', component: 'F', type: 'register', description: 'Central register tracking all client and internal complaints. Status, severity, resolution, lessons learned.' },
+    { ref: '1.21', name: 'Mission Valuation Form', component: 'C', type: 'form', description: 'Engagement/mission valuation and risk assessment form. Used during acceptance to evaluate engagement risk, resource requirements, fee adequacy.' },
+    { ref: '1.23', name: 'Training Course Valuation Form', component: 'E', type: 'form', description: 'Training course evaluation form — participants rate quality, relevance, and applicability. Supports CPD tracking and training quality monitoring.' },
+  ],
+
   securityProcedure: {
     source: 'Procedura de management al incidentelor de securitate a informatiei — UPDATED',
     isqmComponents: ['F', 'E'],
