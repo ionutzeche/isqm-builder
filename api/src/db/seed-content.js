@@ -150,6 +150,28 @@ module.exports = {
     { ref: '1.23', name: 'Training Course Valuation Form', component: 'E', type: 'form', description: 'Training course evaluation form — participants rate quality, relevance, and applicability. Supports CPD tracking and training quality monitoring.' },
   ],
 
+  // Policies and IT procedures from Desktop/new 2 folder
+  policies: [
+    { ref: '1.5', name: 'Politica privind onorariile contingente', component: 'C', description: 'Contingent fee policy — rules on accepting engagements with contingent fees. Supports engagement acceptance risk assessment.' },
+    { ref: '1.6', name: 'Proceduri in cazul nerespectarii legilor de catre clienti', component: 'C', description: 'Procedures when clients breach laws — reporting obligations, engagement continuance decisions, regulatory notification.' },
+    { ref: '1.8', name: 'Politica privind verificarea relatiilor cu clienti internationali', component: 'C', description: 'International client verification policy — due diligence for cross-border clients. Supports CLA Global network compliance.' },
+    { ref: '1.9', name: 'Politica privind verificarea antecedentelor clientilor', component: 'C', description: 'Client background check policy — AML/KYC procedure framework. Links to Background Check Forms 1.11.1 and 1.11.2.' },
+    { ref: '1.10', name: 'Politica privind obtinerea informatiilor necesare de la clienti', component: 'C', description: 'Policy on obtaining necessary client information — data requirements for engagement acceptance and continuance.' },
+    { ref: '1.13', name: 'Politica privind incetarea relatiilor cu clientii', component: 'C', description: 'Client relationship termination policy — criteria, process, documentation for discontinuing client relationships.' },
+    { ref: '1.19', name: 'Politica denuntare interna a neregulilor (whistleblowing)', component: 'F', description: 'Internal whistleblowing policy — anonymous reporting channels, protection, investigation process. Supports quality concern escalation.' },
+    { ref: '1.22', name: 'Politica privind gestionarea situatiilor de criza', component: 'A', description: 'Crisis management policy — leadership response protocols, communication, business continuity. Supports governance oversight.' },
+  ],
+  itPolicies: [
+    { ref: '1.4.1', name: 'Procedura de administrare a documentelor', component: 'F', description: 'Document administration procedure — version control, access, retention, disposal. Supports information management controls.' },
+    { ref: '1.4.2', name: 'Procedura de management al incidentelor de securitate', component: 'F', description: 'Security incident management — ticketing, analysis, resolution, periodic review. Incident reporting via BSD IT department.' },
+    { ref: '1.4.3', name: 'Procedura de management al vulnerabilitatilor de securitate', component: 'F', description: 'Security vulnerability management — scanning, assessment, patching, risk acceptance. Supports technology resource controls.' },
+    { ref: '1.4.4', name: 'Procedura privind administrarea parolelor', component: 'F', description: 'Password administration procedure — complexity, rotation, MFA requirements. Protects engagement and client data.' },
+    { ref: '1.4.5', name: 'Procedura privind casarea echipamentelor', component: 'E', description: 'Equipment disposal procedure — secure data wiping, hardware decommissioning. Prevents data leakage from retired assets.' },
+    { ref: '1.4.6', name: 'Procedura privind filtrarea traficului si accesul in internet', component: 'F', description: 'Internet traffic filtering and access control — web filtering, restricted sites, monitoring. Protects firm infrastructure.' },
+    { ref: '1.4.7', name: 'Procedura privind gestionarea actualizarilor si patch-urilor', component: 'F', description: 'Patch management procedure — update scheduling, testing, deployment. Keeps systems secure and operational.' },
+    { ref: '1.4.8', name: 'Procedura privind utilizarea suportilor de memorie externa', component: 'F', description: 'External storage device policy — USB restrictions, encryption requirements, approved devices. Prevents unauthorized data transfer.' },
+  ],
+
   securityProcedure: {
     source: 'Procedura de management al incidentelor de securitate a informatiei — UPDATED',
     isqmComponents: ['F', 'E'],
