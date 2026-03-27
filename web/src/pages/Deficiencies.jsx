@@ -5,6 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import PageGuidanceCard from '@/components/forms/PageGuidanceCard';
+import FieldLabel from '@/components/forms/FieldLabel';
+import HelperText from '@/components/forms/HelperText';
+import CompletionChecklist from '@/components/forms/CompletionChecklist';
+import ExampleCard from '@/components/forms/ExampleCard';
+import ValidationBanner from '@/components/forms/ValidationBanner';
+import StickyActionBar from '@/components/forms/StickyActionBar';
 import api from '@/api';
 
 export default function Deficiencies() {
@@ -12,136 +19,176 @@ export default function Deficiencies() {
   const [remediations, setRemediations] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
   const [showRemediation, setShowRemediation] = useState(null);
-  const [newDef, setNewDef] = useState({ title: '', description: '', severity: 'medium', root_cause: '', due_date: '' });
+  const [showHelp, setShowHelp] = useState(false);
+  const [form, setForm] = useState({ title: '', description: '', severity: 'medium', root_cause: '', due_date: '' });
   const [newRem, setNewRem] = useState({ description: '', target_date: '' });
+  const [showValidation, setShowValidation] = useState(false);
 
   useEffect(() => { loadData(); }, []);
 
   async function loadData() {
     try {
       const [d, r] = await Promise.all([api.get('/api/monitoring/deficiencies'), api.get('/api/monitoring/remediation')]);
-      setDeficiencies(d.data);
-      setRemediations(r.data);
+      setDeficiencies(d.data); setRemediations(r.data);
     } catch (e) { console.error(e); }
   }
 
   async function addDeficiency() {
-    if (!newDef.title) return;
-    try {
-      await api.post('/api/monitoring/deficiencies', newDef);
-      setNewDef({ title: '', description: '', severity: 'medium', root_cause: '', due_date: '' });
-      setShowAdd(false);
-      loadData();
-    } catch (e) { alert(e.response?.data?.error || e.message); }
+    if (!form.title || !form.severity) { setShowValidation(true); return; }
+    try { await api.post('/api/monitoring/deficiencies', form); setForm({ title: '', description: '', severity: 'medium', root_cause: '', due_date: '' }); setShowAdd(false); setShowValidation(false); loadData(); } catch (e) { alert(e.response?.data?.error || e.message); }
   }
 
   async function addRemediation(defId) {
     if (!newRem.description) return;
-    try {
-      await api.post('/api/monitoring/remediation', { deficiency_id: defId, ...newRem });
-      setNewRem({ description: '', target_date: '' });
-      setShowRemediation(null);
-      loadData();
-    } catch (e) { alert(e.response?.data?.error || e.message); }
+    try { await api.post('/api/monitoring/remediation', { deficiency_id: defId, ...newRem }); setNewRem({ description: '', target_date: '' }); setShowRemediation(null); loadData(); } catch (e) { alert(e.response?.data?.error || e.message); }
   }
 
-  async function updateDefStatus(id, status) {
-    try { await api.put(`/api/monitoring/deficiencies/${id}`, { status }); loadData(); } catch (e) { console.error(e); }
-  }
+  async function updateDefStatus(id, status) { try { await api.put(`/api/monitoring/deficiencies/${id}`, { status }); loadData(); } catch (e) { console.error(e); } }
+  async function completeRemediation(id) { try { await api.put(`/api/monitoring/remediation/${id}`, { status: 'completed', completed_at: new Date().toISOString() }); loadData(); } catch (e) { console.error(e); } }
 
-  async function completeRemediation(id) {
-    try { await api.put(`/api/monitoring/remediation/${id}`, { status: 'completed', completed_at: new Date().toISOString() }); loadData(); } catch (e) { console.error(e); }
-  }
-
-  const sevColor = (s) => s === 'high' ? 'bg-rose-100 text-rose-700' : s === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700';
-  const statusColor = (s) => s === 'open' ? 'bg-rose-100 text-rose-700' : s === 'in_progress' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700';
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const sevColor = (s) => s === 'high' ? 'bg-rose-500/20 text-rose-400' : s === 'medium' ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400';
   const open = deficiencies.filter(d => d.status === 'open').length;
   const overdue = deficiencies.filter(d => d.due_date && new Date(d.due_date) < new Date() && d.status !== 'closed').length;
 
+  const formChecklist = [
+    { label: 'Deficiency title', done: !!form.title },
+    { label: 'Severity level', done: !!form.severity },
+    { label: 'Root cause', done: !!form.root_cause },
+    { label: 'Due date', done: !!form.due_date },
+  ];
+
   return (
     <div>
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between mb-6">
+      <div className="flex items-center justify-between mb-2">
         <div>
           <div className="text-sm text-slate-500 mb-2">Deficiencies</div>
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Track and remediate quality deficiencies</h1>
-          <p className="text-slate-600 mt-2 max-w-3xl">Every deficiency must have a severity, root cause, owner, remediation plan, and closure evidence. Nothing gets lost.</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-white">Track and remediate quality deficiencies</h1>
+          <p className="text-slate-400 mt-2 max-w-2xl">A deficiency is a quality issue that needs fixing. Not a risk, not a finding — a confirmed problem with the quality system.</p>
         </div>
-        <Button className="rounded-2xl" onClick={() => setShowAdd(true)}>Add deficiency</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="rounded-xl border-slate-700 text-slate-300" onClick={() => setShowHelp(!showHelp)}>{showHelp ? 'Hide guide' : 'How to complete this page'}</Button>
+          <Button className="rounded-xl" onClick={() => setShowAdd(!showAdd)}>{showAdd ? 'Cancel' : '+ Add deficiency'}</Button>
+        </div>
       </div>
 
+      {showHelp && (
+        <PageGuidanceCard
+          purpose="Log quality deficiencies — confirmed problems with the quality system found through monitoring, inspection, or other means."
+          required="Title, severity (low/medium/high), root cause, and remediation due date. Each deficiency needs at least one remediation action."
+          example="Audit file review notes not cleared before sign-off on engagement A — identified during Q1 cold file review."
+          mistakes={['Confusing a deficiency with a risk (a deficiency is a confirmed issue, not a potential one)', 'No root cause (makes remediation guesswork)', 'No due date (deficiency stays open forever)', 'Closing without evidence of remediation']}
+        />
+      )}
+
       <div className="grid gap-4 md:grid-cols-4 mb-6">
-        <Card className="rounded-3xl"><CardContent className="p-5"><div className="text-sm text-slate-500">Total</div><div className="text-2xl font-semibold mt-1">{deficiencies.length}</div></CardContent></Card>
-        <Card className="rounded-3xl"><CardContent className="p-5"><div className="text-sm text-slate-500">Open</div><div className="text-2xl font-semibold mt-1 text-rose-600">{open}</div></CardContent></Card>
-        <Card className="rounded-3xl"><CardContent className="p-5"><div className="text-sm text-slate-500">Overdue</div><div className="text-2xl font-semibold mt-1 text-rose-600">{overdue}</div></CardContent></Card>
-        <Card className="rounded-3xl"><CardContent className="p-5"><div className="text-sm text-slate-500">Closed</div><div className="text-2xl font-semibold mt-1 text-emerald-600">{deficiencies.filter(d => d.status === 'closed').length}</div></CardContent></Card>
+        <Card className="rounded-2xl border-slate-700 bg-slate-900/50"><CardContent className="p-4"><div className="text-sm text-slate-500">Total</div><div className="text-2xl font-semibold mt-1 text-white">{deficiencies.length}</div></CardContent></Card>
+        <Card className="rounded-2xl border-slate-700 bg-slate-900/50"><CardContent className="p-4"><div className="text-sm text-slate-500">Open</div><div className="text-2xl font-semibold mt-1 text-rose-400">{open}</div></CardContent></Card>
+        <Card className="rounded-2xl border-slate-700 bg-slate-900/50"><CardContent className="p-4"><div className="text-sm text-slate-500">Overdue</div><div className="text-2xl font-semibold mt-1 text-rose-400">{overdue}</div></CardContent></Card>
+        <Card className="rounded-2xl border-slate-700 bg-slate-900/50"><CardContent className="p-4"><div className="text-sm text-slate-500">Closed</div><div className="text-2xl font-semibold mt-1 text-emerald-400">{deficiencies.filter(d => d.status === 'closed').length}</div></CardContent></Card>
       </div>
 
       {showAdd && (
-        <Card className="rounded-3xl mb-4">
-          <CardHeader><CardTitle>Log deficiency</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            <Input className="rounded-2xl" placeholder="Deficiency title" value={newDef.title} onChange={e => setNewDef({ ...newDef, title: e.target.value })} />
-            <Textarea className="rounded-2xl" placeholder="Description — what was found and what is the impact" value={newDef.description} onChange={e => setNewDef({ ...newDef, description: e.target.value })} />
-            <div className="flex gap-3">
-              <select className="border rounded-xl px-3 py-2 text-sm" value={newDef.severity} onChange={e => setNewDef({ ...newDef, severity: e.target.value })}>
-                <option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
-              </select>
-              <Input className="rounded-2xl" placeholder="Root cause" value={newDef.root_cause} onChange={e => setNewDef({ ...newDef, root_cause: e.target.value })} />
-              <Input className="rounded-2xl" type="date" value={newDef.due_date} onChange={e => setNewDef({ ...newDef, due_date: e.target.value })} />
-            </div>
-            <div className="flex gap-2">
-              <Button className="rounded-2xl" onClick={addDeficiency}>Save</Button>
-              <Button variant="outline" className="rounded-2xl" onClick={() => setShowAdd(false)}>Cancel</Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr] mb-6">
+          <Card className="rounded-2xl border-slate-700 bg-slate-900/50">
+            <CardHeader><CardTitle className="text-white text-sm uppercase tracking-wider">Log deficiency</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <ValidationBanner show={showValidation && !form.title} message="Deficiency title is required." />
+              <div>
+                <FieldLabel label="Deficiency title" required />
+                <Input className="mt-1 rounded-xl bg-slate-800 border-slate-700 text-white placeholder:text-slate-600" placeholder="e.g. Audit file review notes not cleared before sign-off on engagement A" value={form.title} onChange={e => set('title', e.target.value)} />
+                <HelperText>Describe the specific quality issue found. Be precise about what happened.</HelperText>
+              </div>
+              <div>
+                <FieldLabel label="Description" />
+                <Textarea className="mt-1 rounded-xl bg-slate-800 border-slate-700 text-white placeholder:text-slate-600 min-h-20" placeholder="What was the issue? What is the impact on quality?" value={form.description} onChange={e => set('description', e.target.value)} />
+                <HelperText>Explain the issue and its impact on the firm's quality system.</HelperText>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <FieldLabel label="Severity" required />
+                  <select className="mt-1 w-full rounded-xl bg-slate-800 border border-slate-700 text-white px-3 py-2 text-sm" value={form.severity} onChange={e => set('severity', e.target.value)}>
+                    <option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
+                  </select>
+                  <HelperText>High = significant risk to quality. Low = minor process gap.</HelperText>
+                </div>
+                <div>
+                  <FieldLabel label="Root cause" required />
+                  <Input className="mt-1 rounded-xl bg-slate-800 border-slate-700 text-white placeholder:text-slate-600" placeholder="Why did this happen?" value={form.root_cause} onChange={e => set('root_cause', e.target.value)} />
+                  <HelperText>The underlying reason — not the symptom.</HelperText>
+                </div>
+                <div>
+                  <FieldLabel label="Remediation due date" required />
+                  <Input type="date" className="mt-1 rounded-xl bg-slate-800 border-slate-700 text-white" value={form.due_date} onChange={e => set('due_date', e.target.value)} />
+                  <HelperText>When must this be fixed?</HelperText>
+                </div>
+              </div>
+              <StickyActionBar status={`${formChecklist.filter(c => c.done).length} of ${formChecklist.length} fields complete`}>
+                <Button className="rounded-xl" onClick={addDeficiency}>Save deficiency</Button>
+              </StickyActionBar>
+            </CardContent>
+          </Card>
+          <div className="space-y-4">
+            <CompletionChecklist items={formChecklist} />
+            <ExampleCard title="Good deficiency entry" fields={[
+              { label: 'Title', value: 'Audit file review notes not cleared before sign-off' },
+              { label: 'Severity', value: 'Moderate — affects file quality but not audit opinion' },
+              { label: 'Root cause', value: 'No automated alert for uncleared review notes in CaseWare' },
+              { label: 'Remediation', value: 'Configure CaseWare alert + re-brief team on clearance process' },
+            ]} />
+          </div>
+        </div>
       )}
 
-      <Card className="rounded-3xl overflow-hidden">
+      <Card className="rounded-2xl border-slate-700 bg-slate-900/50 overflow-hidden">
         <CardContent className="p-0">
           <Table>
-            <TableHeader><TableRow>
-              <TableHead>Deficiency</TableHead><TableHead>Severity</TableHead><TableHead>Component</TableHead><TableHead>Owner</TableHead><TableHead>Due</TableHead><TableHead>Status</TableHead><TableHead></TableHead>
+            <TableHeader><TableRow className="border-slate-800">
+              <TableHead className="text-slate-500">Deficiency</TableHead><TableHead className="text-slate-500">Severity</TableHead><TableHead className="text-slate-500">Owner</TableHead><TableHead className="text-slate-500">Due</TableHead><TableHead className="text-slate-500">Status</TableHead><TableHead className="text-slate-500"></TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {deficiencies.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-8 text-slate-500">No deficiencies logged. This is either very good or very early.</TableCell></TableRow>}
+              {deficiencies.length === 0 && <TableRow className="border-slate-800"><TableCell colSpan={6} className="text-center py-8 text-slate-600">No deficiencies logged. This is either very good or very early in the process.</TableCell></TableRow>}
               {deficiencies.map(d => (
                 <React.Fragment key={d.id}>
-                  <TableRow>
+                  <TableRow className="border-slate-800 hover:bg-slate-800/30">
                     <TableCell>
-                      <div className="font-medium">{d.title}</div>
-                      {d.description && <div className="text-xs text-slate-500 mt-1 line-clamp-1">{d.description}</div>}
-                      {d.root_cause && <div className="text-xs text-slate-400 mt-1">Root cause: {d.root_cause}</div>}
+                      <div className="font-medium text-slate-200">{d.title}</div>
+                      {d.root_cause && <div className="text-xs text-slate-600 mt-1">Root cause: {d.root_cause}</div>}
                     </TableCell>
                     <TableCell><Badge className={`rounded-full px-3 py-1 ${sevColor(d.severity)}`}>{d.severity}</Badge></TableCell>
-                    <TableCell className="text-sm">{d.component_name || '—'}</TableCell>
-                    <TableCell className="text-sm">{d.owner_name || '—'}</TableCell>
-                    <TableCell className="text-sm font-mono">{d.due_date?.split('T')[0] || '—'}</TableCell>
+                    <TableCell className="text-sm text-slate-400">{d.owner_name || '—'}</TableCell>
+                    <TableCell className="text-sm font-mono text-slate-400">{d.due_date?.split('T')[0] || '—'}</TableCell>
                     <TableCell>
-                      <select className="text-xs border rounded-lg px-2 py-1" value={d.status} onChange={e => updateDefStatus(d.id, e.target.value)}>
+                      <select className="text-xs border border-slate-700 rounded-lg px-2 py-1 bg-slate-800 text-slate-300" value={d.status} onChange={e => updateDefStatus(d.id, e.target.value)}>
                         <option value="open">Open</option><option value="in_progress">In progress</option><option value="closed">Closed</option>
                       </select>
                     </TableCell>
-                    <TableCell><Button variant="outline" className="rounded-xl text-xs" onClick={() => setShowRemediation(showRemediation === d.id ? null : d.id)}>Remediate</Button></TableCell>
+                    <TableCell><Button variant="outline" className="rounded-xl text-xs border-slate-700 text-slate-400" onClick={() => setShowRemediation(showRemediation === d.id ? null : d.id)}>Remediate</Button></TableCell>
                   </TableRow>
                   {showRemediation === d.id && (
-                    <TableRow><TableCell colSpan={7} className="bg-slate-50">
+                    <TableRow className="border-slate-800"><TableCell colSpan={6} className="bg-slate-800/20">
                       <div className="p-3 space-y-3">
-                        <div className="text-sm font-medium text-slate-700">Remediation actions</div>
+                        <div className="text-sm font-medium text-slate-300">Remediation actions</div>
                         {remediations.filter(r => r.deficiency_id === d.id).map(r => (
-                          <div key={r.id} className="flex items-center justify-between p-2 bg-white rounded-xl border text-sm">
-                            <div>{r.description}</div>
+                          <div key={r.id} className="flex items-center justify-between p-2 bg-slate-800/50 rounded-xl border border-slate-700 text-sm">
+                            <div className="text-slate-300">{r.description}</div>
                             <div className="flex items-center gap-2">
                               <span className="font-mono text-xs text-slate-500">{r.target_date?.split('T')[0]}</span>
-                              <Badge className={`rounded-full px-2 py-0.5 text-xs ${r.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{r.status}</Badge>
-                              {r.status !== 'completed' && <Button variant="outline" className="rounded-lg text-xs px-2 py-0.5" onClick={() => completeRemediation(r.id)}>Complete</Button>}
+                              <Badge className={`rounded-full px-2 py-0.5 text-xs ${r.status === 'completed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>{r.status}</Badge>
+                              {r.status !== 'completed' && <Button variant="outline" className="rounded-lg text-xs px-2 py-0.5 border-slate-700 text-slate-400" onClick={() => completeRemediation(r.id)}>Complete</Button>}
                             </div>
                           </div>
                         ))}
                         <div className="flex gap-2 items-end">
-                          <Input className="rounded-xl flex-1" placeholder="Remediation action" value={newRem.description} onChange={e => setNewRem({ ...newRem, description: e.target.value })} />
-                          <Input className="rounded-xl w-40" type="date" value={newRem.target_date} onChange={e => setNewRem({ ...newRem, target_date: e.target.value })} />
-                          <Button className="rounded-xl" onClick={() => addRemediation(d.id)}>Add</Button>
+                          <div className="flex-1">
+                            <FieldLabel label="Action" required />
+                            <Input className="mt-1 rounded-xl bg-slate-800 border-slate-700 text-white placeholder:text-slate-600" placeholder="What needs to be done to fix this?" value={newRem.description} onChange={e => setNewRem({ ...newRem, description: e.target.value })} />
+                          </div>
+                          <div>
+                            <FieldLabel label="Target date" />
+                            <Input className="mt-1 rounded-xl bg-slate-800 border-slate-700 text-white w-40" type="date" value={newRem.target_date} onChange={e => setNewRem({ ...newRem, target_date: e.target.value })} />
+                          </div>
+                          <Button className="rounded-xl mt-5" onClick={() => addRemediation(d.id)}>Add</Button>
                         </div>
                       </div>
                     </TableCell></TableRow>
