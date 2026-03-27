@@ -156,14 +156,14 @@ app.get('/api/seed', async (req, res) => {
       }
     }
 
-    const components = await pool.query('SELECT COUNT(*) FROM isqm_components');
-    const users = await pool.query('SELECT COUNT(*) FROM users');
-    const objectives = await pool.query('SELECT COUNT(*) FROM quality_objectives WHERE organization_id=$1', [orgId]);
-    const risks = await pool.query('SELECT COUNT(*) FROM quality_risks WHERE organization_id=$1', [orgId]);
-    const responses = await pool.query('SELECT COUNT(*) FROM responses WHERE organization_id=$1', [orgId]);
-    const monitoring = await pool.query('SELECT COUNT(*) FROM monitoring_activities WHERE organization_id=$1', [orgId]);
-    const deficiencies = await pool.query('SELECT COUNT(*) FROM deficiencies WHERE organization_id=$1', [orgId]);
-    res.json({ ok: true, components: parseInt(components.rows[0].count), users: parseInt(users.rows[0].count), objectives: parseInt(objectives.rows[0].count), risks: parseInt(risks.rows[0].count), responses: parseInt(responses.rows[0].count), monitoring: parseInt(monitoring.rows[0].count), deficiencies: parseInt(deficiencies.rows[0].count), seeded: { objectives: objCount, risks: riskCount, responses: respCount, monitoring: monCount, deficiencies: defCount } });
+    const compCount = await pool.query('SELECT COUNT(*) FROM isqm_components');
+    const userCount = await pool.query('SELECT COUNT(*) FROM users');
+    const objTotal = await pool.query('SELECT COUNT(*) FROM quality_objectives WHERE organization_id=$1', [orgId]);
+    const riskTotal = await pool.query('SELECT COUNT(*) FROM quality_risks WHERE organization_id=$1', [orgId]);
+    const respTotal = await pool.query('SELECT COUNT(*) FROM responses WHERE organization_id=$1', [orgId]);
+    const monTotal = await pool.query('SELECT COUNT(*) FROM monitoring_activities WHERE organization_id=$1', [orgId]);
+    const defTotal = await pool.query('SELECT COUNT(*) FROM deficiencies WHERE organization_id=$1', [orgId]);
+    res.json({ ok: true, components: parseInt(compCount.rows[0].count), users: parseInt(userCount.rows[0].count), objectives: parseInt(objTotal.rows[0].count), risks: parseInt(riskTotal.rows[0].count), responses: parseInt(respTotal.rows[0].count), monitoring: parseInt(monTotal.rows[0].count), deficiencies: parseInt(defTotal.rows[0].count), seeded: { objectives: objCount, risks: riskCount, responses: respCount, monitoring: monCount, deficiencies: defCount } });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
