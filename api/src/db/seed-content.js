@@ -112,6 +112,26 @@ module.exports = {
   ],
 
   // Sprint tasks from ISQM1_Tracker_Updated_9Mar2026.xlsx
+  // HR Policy Manual evidence references — Component E (Resources) and Component A (Governance)
+  hrManualEvidence: {
+    source: 'Manual de Politici de Resurse Umane — Versiunea Aprilie 2025',
+    approved_by: 'Ana Tifigiu (Group HR Manager) + Ionut Zeche (reviewer)',
+    sections: [
+      { ref: 'Section 7', title: 'Planificarea Resurselor Umane', isqmComponent: 'E', relevance: 'Workforce planning, role classification, salary grids, career trajectories — supports ISQM-1 objective 6a (personnel competence) and risk 6.02 (timely hiring)' },
+      { ref: 'Section 9', title: 'Recrutare și Selecție', isqmComponent: 'E', relevance: 'Recruitment approval process, interview standards, offer approval — supports risk 6.01 (qualified candidates)' },
+      { ref: 'Section 10-11', title: 'Pre-angajare + Inducția Noilor Angajați', isqmComponent: 'E', relevance: 'Onboarding procedure, IT induction, Jurnal Gold training, client induction plan, entry checklist — supports risk 6.03 (adequate skills)' },
+      { ref: 'Section 12', title: 'Evaluarea Performanței', isqmComponent: 'E', relevance: 'Annual KPI evaluation, 360-degree feedback — supports ISQM-1 objective 6b (quality commitment through actions)' },
+      { ref: 'Section 13', title: 'Talent Management și Succession Planning', isqmComponent: 'E', relevance: 'Succession planning, 9-box matrix, leader development — supports risk 6.05 (intellectual capital loss)' },
+      { ref: 'Section 15', title: 'Formarea Profesională (CPD)', isqmComponent: 'E', relevance: 'Professional training programs — supports ISQM-1 objective 6c (competence development) and risk 6.14 (inadequate training)' },
+      { ref: 'Section 3 + Annex 3', title: 'Cod de Conduită și Etică', isqmComponent: 'B', relevance: 'Code of conduct and business ethics — supports Component B (Ethical Requirements) objective' },
+      { ref: 'Section 4 + Annex 4', title: 'Whistleblowing', isqmComponent: 'F', relevance: 'Reporting procedure for quality concerns — supports Component F (Information & Communication) escalation process' },
+      { ref: 'Section 16', title: 'Procedura Disciplinară', isqmComponent: 'A', relevance: 'Disciplinary procedure — supports Component A (Governance) accountability framework' },
+      { ref: 'Annex 23', title: 'Analiză deficit de competențe', isqmComponent: 'E', relevance: 'Skills gap analysis template — supports risk 6.13 (competence gaps) and objective 6c' },
+      { ref: 'Annex 39', title: 'Grilă evaluare potențial, Matrice 9-box', isqmComponent: 'E', relevance: '9-box potential/performance matrix + leader development plan — supports succession planning' },
+      { ref: 'GDPR Section', title: 'Protecția datelor cu caracter personal', isqmComponent: 'F', relevance: 'Data protection policy — supports Component F information security controls' },
+    ]
+  },
+
   sprintTasks: [
     { task: 'CLIENT ACCEPTANCE / CONTINUANCE & AML PROCEDURE UPDATE', priority: 'P0', responsible: 'Diana (Corporate)', deadline: '2026-03-09', status: 'Complete', deliverable: 'Integrated CA procedure + ISQM-1 redline (pp.61-75)', notes: 'Diana delivered: (a) Narrative Client Acceptance Procedure (integrated with InScope AML) and (b) Client Acceptance Map.' },
     { task: 'AUDIT PROCESS DESCRIPTION UPDATE — CASEWARE CLOUD', priority: 'P0', responsible: 'Laurentiu & Alina', deadline: '2026-03-09', status: 'Complete', deliverable: 'Updated process docs + ISQM-1 audit sections + WP templates', notes: 'All subtasks completed. CaseWare Desktop references replaced with Cloud workflows.' },
