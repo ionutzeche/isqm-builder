@@ -48,10 +48,10 @@ export default function RiskEntry({ onBack }) {
 
   if (saved) return (
     <div className="flex items-center justify-center min-h-[50vh]">
-      <Card className="rounded-3xl border-slate-700 bg-slate-900 max-w-md w-full">
+      <Card className="rounded-3xl border-slate-200 bg-white max-w-md w-full">
         <CardContent className="p-8 text-center">
           <div className="text-4xl mb-4">✓</div>
-          <div className="text-xl font-semibold text-white mb-2">Risk saved</div>
+          <div className="text-xl font-semibold text-slate-900 mb-2">Risk saved</div>
           <div className="text-sm text-slate-400">Returning to Risk Register...</div>
         </CardContent>
       </Card>
@@ -61,10 +61,10 @@ export default function RiskEntry({ onBack }) {
   return (
     <div>
       <div className="flex items-center gap-4 mb-4">
-        {onBack && <button onClick={onBack} className="text-slate-500 hover:text-white transition text-sm">&larr; Back to Risk Register</button>}
+        {onBack && <button onClick={onBack} className="text-slate-500 hover:text-slate-900 transition text-sm">&larr; Back to Risk Register</button>}
       </div>
       <div className="text-sm text-slate-500 mb-2">Add quality risk</div>
-      <h1 className="text-3xl font-semibold tracking-tight text-white mb-2">Document a quality risk</h1>
+      <h1 className="text-3xl font-semibold tracking-tight text-slate-900 mb-2">Document a quality risk</h1>
       <p className="text-slate-400 mb-6 max-w-2xl">A quality risk is something that could prevent the firm from achieving an ISQM-1 objective. Write the risk, not the control.</p>
 
       <PageGuidanceCard
@@ -79,17 +79,17 @@ export default function RiskEntry({ onBack }) {
       <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
         <div className="space-y-6">
           {/* REQUIRED SECTION */}
-          <Card className="rounded-2xl border-slate-700 bg-slate-900/50">
-            <CardHeader><CardTitle className="text-white text-sm uppercase tracking-wider">Required information</CardTitle></CardHeader>
+          <Card className="rounded-2xl border-slate-200 bg-white">
+            <CardHeader><CardTitle className="text-slate-900 text-sm uppercase tracking-wider">Required information</CardTitle></CardHeader>
             <CardContent className="space-y-5">
               <div>
                 <FieldLabel label="Risk title" required />
-                <Input className="mt-1.5 rounded-xl bg-slate-800 border-slate-700 text-white placeholder:text-slate-600" placeholder="Insufficient manager review capacity in Audit during peak periods" value={form.title} onChange={e => set('title', e.target.value)} />
+                <Input className="mt-1.5 rounded-xl bg-white border-slate-200 text-slate-900 placeholder:text-slate-400" placeholder="Insufficient manager review capacity in Audit during peak periods" value={form.title} onChange={e => set('title', e.target.value)} />
                 <HelperText>Write one short sentence describing the risk. Be specific about where the issue occurs.</HelperText>
               </div>
               <div>
                 <FieldLabel label="ISQM component" required />
-                <select className="mt-1.5 w-full rounded-xl bg-slate-800 border border-slate-700 text-white px-3 py-2 text-sm" value={form.component_id} onChange={e => set('component_id', e.target.value)}>
+                <select className="mt-1.5 w-full rounded-xl bg-white border border-slate-200 text-slate-900 px-3 py-2 text-sm" value={form.component_id} onChange={e => set('component_id', e.target.value)}>
                   <option value="">Select component...</option>
                   {components.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
@@ -97,7 +97,7 @@ export default function RiskEntry({ onBack }) {
               </div>
               <div>
                 <FieldLabel label="Affected practice" required />
-                <select className="mt-1.5 w-full rounded-xl bg-slate-800 border border-slate-700 text-white px-3 py-2 text-sm" value={form.practice} onChange={e => set('practice', e.target.value)}>
+                <select className="mt-1.5 w-full rounded-xl bg-white border border-slate-200 text-slate-900 px-3 py-2 text-sm" value={form.practice} onChange={e => set('practice', e.target.value)}>
                   <option value="">Select practice...</option>
                   <option>Audit</option><option>Tax</option><option>BPS</option><option>Advisory</option><option>Legal</option><option>Transfer Pricing</option><option>Mobility</option><option>M&A</option><option>All</option>
                 </select>
@@ -105,7 +105,7 @@ export default function RiskEntry({ onBack }) {
               </div>
               <div>
                 <FieldLabel label="Owner" required />
-                <select className="mt-1.5 w-full rounded-xl bg-slate-800 border border-slate-700 text-white px-3 py-2 text-sm" value={form.owner} onChange={e => set('owner', e.target.value)}>
+                <select className="mt-1.5 w-full rounded-xl bg-white border border-slate-200 text-slate-900 px-3 py-2 text-sm" value={form.owner} onChange={e => set('owner', e.target.value)}>
                   <option value="">Select owner...</option>
                   <option>Laurentiu Vasile</option><option>Alina Ene</option><option>Qasim Ranjha</option><option>Marfa Arif</option><option>Roxana Olteanu</option><option>George Chiriac</option>
                 </select>
@@ -113,32 +113,32 @@ export default function RiskEntry({ onBack }) {
               </div>
               <div>
                 <FieldLabel label="Next review date" required />
-                <Input type="date" className="mt-1.5 rounded-xl bg-slate-800 border-slate-700 text-white" value={form.next_review_date} onChange={e => set('next_review_date', e.target.value)} />
+                <Input type="date" className="mt-1.5 rounded-xl bg-white border-slate-200 text-slate-900" value={form.next_review_date} onChange={e => set('next_review_date', e.target.value)} />
                 <HelperText>When should this risk next be formally reassessed?</HelperText>
               </div>
             </CardContent>
           </Card>
 
           {/* DETAILS SECTION */}
-          <Card className="rounded-2xl border-slate-700 bg-slate-900/50">
-            <CardHeader><CardTitle className="text-white text-sm uppercase tracking-wider">Risk details</CardTitle><CardDescription className="text-slate-500">Optional but recommended for completeness.</CardDescription></CardHeader>
+          <Card className="rounded-2xl border-slate-200 bg-white">
+            <CardHeader><CardTitle className="text-slate-900 text-sm uppercase tracking-wider">Risk details</CardTitle><CardDescription className="text-slate-500">Optional but recommended for completeness.</CardDescription></CardHeader>
             <CardContent className="space-y-5">
               <div>
                 <FieldLabel label="Description" />
-                <Textarea className="mt-1.5 rounded-xl bg-slate-800 border-slate-700 text-white placeholder:text-slate-600 min-h-24" placeholder="During peak periods, reviewer capacity may be insufficient, increasing the risk of rushed review or delayed issue escalation." value={form.description} onChange={e => set('description', e.target.value)} />
+                <Textarea className="mt-1.5 rounded-xl bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 min-h-24" placeholder="During peak periods, reviewer capacity may be insufficient, increasing the risk of rushed review or delayed issue escalation." value={form.description} onChange={e => set('description', e.target.value)} />
                 <HelperText>Explain what could go wrong and why it matters.</HelperText>
               </div>
               <div>
                 <FieldLabel label="Root cause" />
-                <Textarea className="mt-1.5 rounded-xl bg-slate-800 border-slate-700 text-white placeholder:text-slate-600 min-h-20" placeholder="Review responsibilities are concentrated in too few managers and partners." value={form.root_cause} onChange={e => set('root_cause', e.target.value)} />
+                <Textarea className="mt-1.5 rounded-xl bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 min-h-20" placeholder="Review responsibilities are concentrated in too few managers and partners." value={form.root_cause} onChange={e => set('root_cause', e.target.value)} />
                 <HelperText>Why does this risk exist? What is the underlying driver?</HelperText>
               </div>
             </CardContent>
           </Card>
 
           {/* SCORING SECTION */}
-          <Card className="rounded-2xl border-slate-700 bg-slate-900/50">
-            <CardHeader><CardTitle className="text-white text-sm uppercase tracking-wider">Risk scoring</CardTitle><CardDescription className="text-slate-500">Score 1 (lowest) to 5 (highest). Residual = after considering current responses.</CardDescription></CardHeader>
+          <Card className="rounded-2xl border-slate-200 bg-white">
+            <CardHeader><CardTitle className="text-slate-900 text-sm uppercase tracking-wider">Risk scoring</CardTitle><CardDescription className="text-slate-500">Score 1 (lowest) to 5 (highest). Residual = after considering current responses.</CardDescription></CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
@@ -149,7 +149,7 @@ export default function RiskEntry({ onBack }) {
                 ].map(([label, key, helper]) => (
                   <div key={key}>
                     <FieldLabel label={label} />
-                    <select className="mt-1.5 w-full rounded-xl bg-slate-800 border border-slate-700 text-white px-3 py-2 text-sm" value={form[key]} onChange={e => set(key, parseInt(e.target.value))}>
+                    <select className="mt-1.5 w-full rounded-xl bg-white border border-slate-200 text-slate-900 px-3 py-2 text-sm" value={form[key]} onChange={e => set(key, parseInt(e.target.value))}>
                       {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
                     </select>
                     <HelperText>{helper}</HelperText>
@@ -157,13 +157,13 @@ export default function RiskEntry({ onBack }) {
                 ))}
               </div>
               <div className="mt-4 grid grid-cols-2 gap-4">
-                <div className="rounded-xl bg-slate-800 p-3 text-center">
+                <div className="rounded-xl bg-white p-3 text-center">
                   <div className="text-xs text-slate-500">Inherent score</div>
-                  <div className="text-2xl font-bold text-white">{form.inherent_likelihood * form.inherent_impact}</div>
+                  <div className="text-2xl font-bold text-slate-900">{form.inherent_likelihood * form.inherent_impact}</div>
                 </div>
-                <div className="rounded-xl bg-slate-800 p-3 text-center">
+                <div className="rounded-xl bg-white p-3 text-center">
                   <div className="text-xs text-slate-500">Residual score</div>
-                  <div className="text-2xl font-bold text-white">{form.residual_likelihood * form.residual_impact}</div>
+                  <div className="text-2xl font-bold text-slate-900">{form.residual_likelihood * form.residual_impact}</div>
                 </div>
               </div>
             </CardContent>
@@ -179,7 +179,7 @@ export default function RiskEntry({ onBack }) {
             { label: 'Description', value: 'Manager review capacity may be insufficient during peak periods, creating risk of incomplete review and delayed escalation.' },
             { label: 'Root cause', value: 'Reviewer load is concentrated in too few people.' },
           ]} />
-          <div className="rounded-2xl border border-slate-700 bg-slate-900/50 p-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4">
             <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Tips for good entries</div>
             <div className="space-y-2 text-sm text-slate-500">
               <div>• Write the risk, not the control</div>
@@ -193,7 +193,7 @@ export default function RiskEntry({ onBack }) {
       </div>
 
       <StickyActionBar status={`${doneCount} of ${checklist.length} required fields complete`}>
-        <Button variant="outline" className="rounded-xl border-slate-700 text-slate-300" onClick={() => saveRisk(true)} disabled={saving}>Save draft</Button>
+        <Button variant="outline" className="rounded-xl border-slate-200 text-slate-700" onClick={() => saveRisk(true)} disabled={saving}>Save draft</Button>
         <Button className="rounded-xl" onClick={() => saveRisk(false)} disabled={saving || !allRequired}>{saving ? 'Saving...' : 'Save risk'}</Button>
       </StickyActionBar>
     </div>

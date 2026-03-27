@@ -30,7 +30,7 @@ export default function Monitoring() {
   }
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-  const resultColor = (r) => r === 'pass' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400';
+  const resultColor = (r) => r === 'pass' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600';
   const methodLabel = { inspection: 'Inspection', walkthrough: 'Walkthrough', analytics: 'Analytics', thematic_review: 'Thematic review', file_review: 'File review' };
   const issues = activities.filter(a => a.result === 'issue_found').length;
 
@@ -46,11 +46,11 @@ export default function Monitoring() {
       <div className="flex items-center justify-between mb-2">
         <div>
           <div className="text-sm text-slate-500 mb-2">Monitoring</div>
-          <h1 className="text-3xl font-semibold tracking-tight text-white">Track monitoring activities</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Track monitoring activities</h1>
           <p className="text-slate-400 mt-2 max-w-2xl">Log activities that test whether the quality system is working. Each activity may generate findings or deficiencies.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="rounded-xl border-slate-700 text-slate-300" onClick={() => setShowHelp(!showHelp)}>{showHelp ? 'Hide guide' : 'How to complete this page'}</Button>
+          <Button variant="outline" className="rounded-xl border-slate-200 text-slate-700" onClick={() => setShowHelp(!showHelp)}>{showHelp ? 'Hide guide' : 'How to complete this page'}</Button>
           <Button className="rounded-xl" onClick={() => setShowAdd(!showAdd)}>{showAdd ? 'Cancel' : '+ Log activity'}</Button>
         </div>
       </div>
@@ -65,34 +65,34 @@ export default function Monitoring() {
       )}
 
       <div className="grid gap-4 md:grid-cols-4 mb-6">
-        <Card className="rounded-2xl border-slate-700 bg-slate-900/50"><CardContent className="p-4"><div className="text-sm text-slate-500">Activities logged</div><div className="text-2xl font-semibold mt-1 text-white">{activities.length}</div></CardContent></Card>
-        <Card className="rounded-2xl border-slate-700 bg-slate-900/50"><CardContent className="p-4"><div className="text-sm text-slate-500">Issues found</div><div className="text-2xl font-semibold mt-1 text-rose-400">{issues}</div></CardContent></Card>
-        <Card className="rounded-2xl border-slate-700 bg-slate-900/50"><CardContent className="p-4"><div className="text-sm text-slate-500">Pass rate</div><div className="text-2xl font-semibold mt-1 text-emerald-400">{activities.length ? Math.round((activities.length - issues) / activities.length * 100) + '%' : '—'}</div></CardContent></Card>
-        <Card className="rounded-2xl border-slate-700 bg-slate-900/50"><CardContent className="p-4"><div className="text-sm text-slate-500">Methods used</div><div className="text-2xl font-semibold mt-1 text-white">{[...new Set(activities.map(a => a.method))].length}</div></CardContent></Card>
+        <Card className="rounded-2xl border-slate-200 bg-white"><CardContent className="p-4"><div className="text-sm text-slate-500">Activities logged</div><div className="text-2xl font-semibold mt-1 text-slate-900">{activities.length}</div></CardContent></Card>
+        <Card className="rounded-2xl border-slate-200 bg-white"><CardContent className="p-4"><div className="text-sm text-slate-500">Issues found</div><div className="text-2xl font-semibold mt-1 text-rose-600">{issues}</div></CardContent></Card>
+        <Card className="rounded-2xl border-slate-200 bg-white"><CardContent className="p-4"><div className="text-sm text-slate-500">Pass rate</div><div className="text-2xl font-semibold mt-1 text-emerald-600">{activities.length ? Math.round((activities.length - issues) / activities.length * 100) + '%' : '—'}</div></CardContent></Card>
+        <Card className="rounded-2xl border-slate-200 bg-white"><CardContent className="p-4"><div className="text-sm text-slate-500">Methods used</div><div className="text-2xl font-semibold mt-1 text-slate-900">{[...new Set(activities.map(a => a.method))].length}</div></CardContent></Card>
       </div>
 
       {showAdd && (
         <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr] mb-6">
-          <Card className="rounded-2xl border-slate-700 bg-slate-900/50">
-            <CardHeader><CardTitle className="text-white text-sm uppercase tracking-wider">Log monitoring activity</CardTitle></CardHeader>
+          <Card className="rounded-2xl border-slate-200 bg-white">
+            <CardHeader><CardTitle className="text-slate-900 text-sm uppercase tracking-wider">Log monitoring activity</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <ValidationBanner show={showValidation && !form.title} message="Activity title is required." />
               <div>
                 <FieldLabel label="Activity title" required />
-                <Input className="mt-1 rounded-xl bg-slate-800 border-slate-700 text-white placeholder:text-slate-600" placeholder="e.g. Cold file review Q1 2026 — Engagement A statutory audit" value={form.title} onChange={e => set('title', e.target.value)} />
+                <Input className="mt-1 rounded-xl bg-white border-slate-200 text-slate-900 placeholder:text-slate-400" placeholder="e.g. Cold file review Q1 2026 — Engagement A statutory audit" value={form.title} onChange={e => set('title', e.target.value)} />
                 <HelperText>What monitoring activity was performed? Be specific about scope.</HelperText>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <FieldLabel label="Method" required />
-                  <select className="mt-1 w-full rounded-xl bg-slate-800 border border-slate-700 text-white px-3 py-2 text-sm" value={form.method} onChange={e => set('method', e.target.value)}>
+                  <select className="mt-1 w-full rounded-xl bg-white border border-slate-200 text-slate-900 px-3 py-2 text-sm" value={form.method} onChange={e => set('method', e.target.value)}>
                     <option value="file_review">File review</option><option value="inspection">Inspection</option><option value="walkthrough">Walkthrough</option><option value="analytics">Analytics</option><option value="thematic_review">Thematic review</option>
                   </select>
                   <HelperText>How was this activity performed?</HelperText>
                 </div>
                 <div>
                   <FieldLabel label="Result" required />
-                  <select className="mt-1 w-full rounded-xl bg-slate-800 border border-slate-700 text-white px-3 py-2 text-sm" value={form.result} onChange={e => set('result', e.target.value)}>
+                  <select className="mt-1 w-full rounded-xl bg-white border border-slate-200 text-slate-900 px-3 py-2 text-sm" value={form.result} onChange={e => set('result', e.target.value)}>
                     <option value="pass">Pass — no issues</option><option value="issue_found">Issue found</option>
                   </select>
                   <HelperText>Did you find any issues? If yes, create a deficiency after saving.</HelperText>
@@ -100,7 +100,7 @@ export default function Monitoring() {
               </div>
               <div>
                 <FieldLabel label="Notes and observations" />
-                <Textarea className="mt-1 rounded-xl bg-slate-800 border-slate-700 text-white placeholder:text-slate-600 min-h-24" placeholder="What was tested? What was observed? Any recommendations?" value={form.notes} onChange={e => set('notes', e.target.value)} />
+                <Textarea className="mt-1 rounded-xl bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 min-h-24" placeholder="What was tested? What was observed? Any recommendations?" value={form.notes} onChange={e => set('notes', e.target.value)} />
                 <HelperText>Describe what you reviewed, what you found, and any follow-up needed.</HelperText>
               </div>
               <StickyActionBar status={`${formChecklist.filter(c => c.done).length} of ${formChecklist.length} fields complete`}>
@@ -120,18 +120,18 @@ export default function Monitoring() {
         </div>
       )}
 
-      <Card className="rounded-2xl border-slate-700 bg-slate-900/50 overflow-hidden">
+      <Card className="rounded-2xl border-slate-200 bg-white overflow-hidden">
         <CardContent className="p-0">
           <Table>
-            <TableHeader><TableRow className="border-slate-800">
+            <TableHeader><TableRow className="border-slate-200">
               <TableHead className="text-slate-500">Activity</TableHead><TableHead className="text-slate-500">Method</TableHead><TableHead className="text-slate-500">Date</TableHead><TableHead className="text-slate-500">Result</TableHead><TableHead className="text-slate-500">Notes</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {activities.length === 0 && <TableRow className="border-slate-800"><TableCell colSpan={5} className="text-center py-8 text-slate-600">No monitoring activities logged yet. Click "Log activity" to record a review or inspection.</TableCell></TableRow>}
+              {activities.length === 0 && <TableRow className="border-slate-200"><TableCell colSpan={5} className="text-center py-8 text-slate-600">No monitoring activities logged yet. Click "Log activity" to record a review or inspection.</TableCell></TableRow>}
               {activities.map(a => (
-                <TableRow key={a.id} className="border-slate-800 hover:bg-slate-800/30">
-                  <TableCell className="font-medium text-slate-200">{a.title}</TableCell>
-                  <TableCell><Badge variant="outline" className="rounded-full border-slate-700 text-slate-400">{methodLabel[a.method] || a.method}</Badge></TableCell>
+                <TableRow key={a.id} className="border-slate-200 hover:bg-slate-50">
+                  <TableCell className="font-medium text-slate-900">{a.title}</TableCell>
+                  <TableCell><Badge variant="outline" className="rounded-full border-slate-200 text-slate-400">{methodLabel[a.method] || a.method}</Badge></TableCell>
                   <TableCell className="text-sm font-mono text-slate-400">{a.performed_at?.split('T')[0] || '—'}</TableCell>
                   <TableCell><Badge className={`rounded-full px-3 py-1 ${resultColor(a.result)}`}>{a.result === 'issue_found' ? 'Issue found' : 'Pass'}</Badge></TableCell>
                   <TableCell className="text-sm text-slate-500 max-w-xs truncate">{a.notes || '—'}</TableCell>

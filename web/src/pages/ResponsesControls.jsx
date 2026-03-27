@@ -44,7 +44,7 @@ export default function ResponsesControls() {
     try { await api.post('/api/responses', { title: t.title, description: t.desc, frequency: t.freq }); loadData(); setTab('responses'); } catch (e) { alert(e.message); }
   }
 
-  const effColor = (s) => s === 'effective' ? 'bg-emerald-500/20 text-emerald-400' : s === 'ineffective' ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-700 text-slate-400';
+  const effColor = (s) => s === 'effective' ? 'bg-emerald-100 text-emerald-600' : s === 'ineffective' ? 'bg-rose-100 text-rose-600' : 'bg-slate-200 text-slate-400';
 
   const templates = [
     { title: 'Independence confirmation process', desc: 'Annual declarations from all professional staff confirming compliance with independence requirements.', freq: 'annual' },
@@ -62,11 +62,11 @@ export default function ResponsesControls() {
       <div className="flex items-center justify-between mb-2">
         <div>
           <div className="text-sm text-slate-500 mb-2">Responses & Controls</div>
-          <h1 className="text-3xl font-semibold tracking-tight text-white">Link risks to operational responses</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Link risks to operational responses</h1>
           <p className="text-slate-400 mt-2 max-w-2xl">A response is a policy or procedure the firm uses to address a risk. A control is a specific activity within a response. Both must be operational, not aspirational.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="rounded-xl border-slate-700 text-slate-300" onClick={() => setShowHelp(!showHelp)}>{showHelp ? 'Hide guide' : 'How to complete this page'}</Button>
+          <Button variant="outline" className="rounded-xl border-slate-200 text-slate-700" onClick={() => setShowHelp(!showHelp)}>{showHelp ? 'Hide guide' : 'How to complete this page'}</Button>
           <Button className="rounded-xl" onClick={() => { setTab('responses'); setShowAdd(true); }}>+ Add response</Button>
         </div>
       </div>
@@ -81,7 +81,7 @@ export default function ResponsesControls() {
       )}
 
       <Tabs value={tab} onValueChange={setTab} className="space-y-6">
-        <TabsList className="rounded-2xl h-auto p-1 bg-slate-800">
+        <TabsList className="rounded-2xl h-auto p-1 bg-white">
           <TabsTrigger value="responses" className="rounded-xl">Responses ({responses.length})</TabsTrigger>
           <TabsTrigger value="controls" className="rounded-xl">Controls ({controls.length})</TabsTrigger>
           <TabsTrigger value="templates" className="rounded-xl">Templates (8)</TabsTrigger>
@@ -89,67 +89,67 @@ export default function ResponsesControls() {
 
         <TabsContent value="responses">
           {showAdd && (
-            <Card className="rounded-2xl border-slate-700 bg-slate-900/50 mb-4">
+            <Card className="rounded-2xl border-slate-200 bg-white mb-4">
               <CardContent className="p-4 space-y-3">
                 <ValidationBanner show={showValidation && !newResp.title} message="Response title is required." />
                 <div>
                   <FieldLabel label="Response title" required />
-                  <Input className="mt-1 rounded-xl bg-slate-800 border-slate-700 text-white placeholder:text-slate-600" placeholder="e.g. Cold file review programme — 3 files per quarter" value={newResp.title} onChange={e => setNewResp({ ...newResp, title: e.target.value })} />
+                  <Input className="mt-1 rounded-xl bg-white border-slate-200 text-slate-900 placeholder:text-slate-400" placeholder="e.g. Cold file review programme — 3 files per quarter" value={newResp.title} onChange={e => setNewResp({ ...newResp, title: e.target.value })} />
                   <HelperText>What does this response do? Be specific and operational.</HelperText>
                 </div>
                 <div>
                   <FieldLabel label="Description" />
-                  <Textarea className="mt-1 rounded-xl bg-slate-800 border-slate-700 text-white placeholder:text-slate-600 min-h-16" placeholder="Describe how this response works in practice..." value={newResp.description} onChange={e => setNewResp({ ...newResp, description: e.target.value })} />
+                  <Textarea className="mt-1 rounded-xl bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 min-h-16" placeholder="Describe how this response works in practice..." value={newResp.description} onChange={e => setNewResp({ ...newResp, description: e.target.value })} />
                   <HelperText>How does this response operate? Who does what, when?</HelperText>
                 </div>
                 <div className="flex gap-3 items-end">
                   <div>
                     <FieldLabel label="Frequency" required />
-                    <select className="mt-1 rounded-xl bg-slate-800 border border-slate-700 text-white px-3 py-2 text-sm" value={newResp.frequency} onChange={e => setNewResp({ ...newResp, frequency: e.target.value })}>
+                    <select className="mt-1 rounded-xl bg-white border border-slate-200 text-slate-900 px-3 py-2 text-sm" value={newResp.frequency} onChange={e => setNewResp({ ...newResp, frequency: e.target.value })}>
                       <option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="annual">Annual</option><option value="ad_hoc">Ad hoc / per engagement</option>
                     </select>
                   </div>
                   <Button className="rounded-xl" onClick={addResponse}>Save response</Button>
-                  <Button variant="outline" className="rounded-xl border-slate-700 text-slate-400" onClick={() => { setShowAdd(false); setShowValidation(false); }}>Cancel</Button>
+                  <Button variant="outline" className="rounded-xl border-slate-200 text-slate-400" onClick={() => { setShowAdd(false); setShowValidation(false); }}>Cancel</Button>
                 </div>
               </CardContent>
             </Card>
           )}
-          <Card className="rounded-2xl border-slate-700 bg-slate-900/50 overflow-hidden">
+          <Card className="rounded-2xl border-slate-200 bg-white overflow-hidden">
             <CardContent className="p-0">
               <Table>
-                <TableHeader><TableRow className="border-slate-800">
+                <TableHeader><TableRow className="border-slate-200">
                   <TableHead className="text-slate-500">Response</TableHead><TableHead className="text-slate-500">Frequency</TableHead><TableHead className="text-slate-500">Linked risks</TableHead><TableHead className="text-slate-500">Effectiveness</TableHead><TableHead className="text-slate-500"></TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
-                  {responses.length === 0 && <TableRow className="border-slate-800"><TableCell colSpan={5} className="text-center py-8 text-slate-600">No responses yet. Add one or use the Templates tab to start from a standard pattern.</TableCell></TableRow>}
+                  {responses.length === 0 && <TableRow className="border-slate-200"><TableCell colSpan={5} className="text-center py-8 text-slate-600">No responses yet. Add one or use the Templates tab to start from a standard pattern.</TableCell></TableRow>}
                   {responses.map(r => (
                     <React.Fragment key={r.id}>
-                      <TableRow className="border-slate-800 hover:bg-slate-800/30">
-                        <TableCell><div className="font-medium text-slate-200">{r.title}</div>{r.description && <div className="text-xs text-slate-600 mt-1 line-clamp-1">{r.description}</div>}</TableCell>
-                        <TableCell><Badge variant="outline" className="rounded-full border-slate-700 text-slate-400">{r.frequency?.replace('_', ' ') || '—'}</Badge></TableCell>
+                      <TableRow className="border-slate-200 hover:bg-slate-50">
+                        <TableCell><div className="font-medium text-slate-900">{r.title}</div>{r.description && <div className="text-xs text-slate-600 mt-1 line-clamp-1">{r.description}</div>}</TableCell>
+                        <TableCell><Badge variant="outline" className="rounded-full border-slate-200 text-slate-400">{r.frequency?.replace('_', ' ') || '—'}</Badge></TableCell>
                         <TableCell className="text-sm font-mono text-slate-400">{r.linked_risks || 0}</TableCell>
                         <TableCell><Badge className={`rounded-full px-3 py-1 ${effColor(r.effectiveness_status)}`}>{r.effectiveness_status}</Badge></TableCell>
-                        <TableCell><Button variant="outline" className="rounded-xl text-xs border-slate-700 text-slate-400" onClick={() => setShowAddControl(showAddControl === r.id ? null : r.id)}>+ Control</Button></TableCell>
+                        <TableCell><Button variant="outline" className="rounded-xl text-xs border-slate-200 text-slate-400" onClick={() => setShowAddControl(showAddControl === r.id ? null : r.id)}>+ Control</Button></TableCell>
                       </TableRow>
                       {showAddControl === r.id && (
-                        <TableRow className="border-slate-800"><TableCell colSpan={5} className="bg-slate-800/20">
+                        <TableRow className="border-slate-200"><TableCell colSpan={5} className="bg-slate-50">
                           <div className="p-3 space-y-3">
-                            <div className="text-sm font-medium text-slate-300">Add control to this response</div>
+                            <div className="text-sm font-medium text-slate-700">Add control to this response</div>
                             <div className="flex gap-3 items-end">
                               <div className="flex-1">
                                 <FieldLabel label="Control title" required />
-                                <Input className="mt-1 rounded-xl bg-slate-800 border-slate-700 text-white placeholder:text-slate-600" placeholder="e.g. Review checklist completed and signed" value={newCtrl.title} onChange={e => setNewCtrl({ ...newCtrl, title: e.target.value })} />
+                                <Input className="mt-1 rounded-xl bg-white border-slate-200 text-slate-900 placeholder:text-slate-400" placeholder="e.g. Review checklist completed and signed" value={newCtrl.title} onChange={e => setNewCtrl({ ...newCtrl, title: e.target.value })} />
                               </div>
                               <div>
                                 <FieldLabel label="Type" />
-                                <select className="mt-1 rounded-xl bg-slate-800 border border-slate-700 text-white px-2 py-2 text-xs" value={newCtrl.control_type} onChange={e => setNewCtrl({ ...newCtrl, control_type: e.target.value })}>
+                                <select className="mt-1 rounded-xl bg-white border border-slate-200 text-slate-900 px-2 py-2 text-xs" value={newCtrl.control_type} onChange={e => setNewCtrl({ ...newCtrl, control_type: e.target.value })}>
                                   <option value="manual">Manual</option><option value="automated">Automated</option>
                                 </select>
                               </div>
                               <div className="flex-1">
                                 <FieldLabel label="Evidence required" />
-                                <Input className="mt-1 rounded-xl bg-slate-800 border-slate-700 text-white placeholder:text-slate-600" placeholder="e.g. Signed checklist, screenshot" value={newCtrl.evidence_required} onChange={e => setNewCtrl({ ...newCtrl, evidence_required: e.target.value })} />
+                                <Input className="mt-1 rounded-xl bg-white border-slate-200 text-slate-900 placeholder:text-slate-400" placeholder="e.g. Signed checklist, screenshot" value={newCtrl.evidence_required} onChange={e => setNewCtrl({ ...newCtrl, evidence_required: e.target.value })} />
                               </div>
                               <Button className="rounded-xl mt-5" onClick={() => addControl(r.id)}>Save</Button>
                             </div>
@@ -165,16 +165,16 @@ export default function ResponsesControls() {
         </TabsContent>
 
         <TabsContent value="controls">
-          <Card className="rounded-2xl border-slate-700 bg-slate-900/50 overflow-hidden">
+          <Card className="rounded-2xl border-slate-200 bg-white overflow-hidden">
             <CardContent className="p-0">
               <Table>
-                <TableHeader><TableRow className="border-slate-800"><TableHead className="text-slate-500">Control</TableHead><TableHead className="text-slate-500">Type</TableHead><TableHead className="text-slate-500">Evidence required</TableHead><TableHead className="text-slate-500">Reviewer</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow className="border-slate-200"><TableHead className="text-slate-500">Control</TableHead><TableHead className="text-slate-500">Type</TableHead><TableHead className="text-slate-500">Evidence required</TableHead><TableHead className="text-slate-500">Reviewer</TableHead></TableRow></TableHeader>
                 <TableBody>
-                  {controls.length === 0 && <TableRow className="border-slate-800"><TableCell colSpan={4} className="text-center py-8 text-slate-600">No controls yet. Add controls from the Responses tab.</TableCell></TableRow>}
+                  {controls.length === 0 && <TableRow className="border-slate-200"><TableCell colSpan={4} className="text-center py-8 text-slate-600">No controls yet. Add controls from the Responses tab.</TableCell></TableRow>}
                   {controls.map(c => (
-                    <TableRow key={c.id} className="border-slate-800 hover:bg-slate-800/30">
-                      <TableCell className="font-medium text-slate-200">{c.title}</TableCell>
-                      <TableCell><Badge variant="outline" className="rounded-full border-slate-700 text-slate-400">{c.control_type}</Badge></TableCell>
+                    <TableRow key={c.id} className="border-slate-200 hover:bg-slate-50">
+                      <TableCell className="font-medium text-slate-900">{c.title}</TableCell>
+                      <TableCell><Badge variant="outline" className="rounded-full border-slate-200 text-slate-400">{c.control_type}</Badge></TableCell>
                       <TableCell className="text-sm text-slate-500">{c.evidence_required || '—'}</TableCell>
                       <TableCell className="text-sm text-slate-400">{c.reviewer_name || '—'}</TableCell>
                     </TableRow>
@@ -189,11 +189,11 @@ export default function ResponsesControls() {
           <PageGuidanceCard purpose="These are standard ISQM-1 response patterns. Click any template to add it as a response, then customise for CLA Romania." required="Review each template before adding. Customise the description to reflect how CLA Romania actually operates." />
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 mt-4">
             {templates.map(t => (
-              <Card key={t.title} className="rounded-2xl border-slate-700 bg-slate-900/50 hover:bg-slate-800/50 transition cursor-pointer" onClick={() => addFromTemplate(t)}>
+              <Card key={t.title} className="rounded-2xl border-slate-200 bg-white hover:bg-slate-50 transition cursor-pointer" onClick={() => addFromTemplate(t)}>
                 <CardContent className="p-5">
-                  <div className="font-medium text-slate-200">{t.title}</div>
+                  <div className="font-medium text-slate-900">{t.title}</div>
                   <div className="text-sm text-slate-500 mt-2 leading-relaxed">{t.desc}</div>
-                  <Badge variant="outline" className="rounded-full border-slate-700 text-slate-400 mt-3">{t.freq.replace('_', ' ')}</Badge>
+                  <Badge variant="outline" className="rounded-full border-slate-200 text-slate-400 mt-3">{t.freq.replace('_', ' ')}</Badge>
                   <div className="text-xs text-slate-600 mt-2">Click to add as response</div>
                 </CardContent>
               </Card>

@@ -65,7 +65,7 @@ function MetaRow({ label, value }) { return <div className="space-y-1"><div clas
 
 function Sidebar({ page, setPage }) {
   return (
-    <aside className="hidden md:flex md:w-72 md:flex-col border-r border-slate-800 bg-slate-900/70 backdrop-blur-sm">
+    <aside className="hidden md:flex md:w-72 md:flex-col border-r bg-white/70 backdrop-blur-sm">
       <div className="p-5 border-b">
         <div className="flex items-center gap-3">
           <div className="h-11 w-11 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-sm"><ShieldCheck className="h-5 w-5" /></div>
@@ -93,7 +93,7 @@ function Sidebar({ page, setPage }) {
 
 function TopBar() {
   return (
-    <div className="sticky top-0 z-20 border-b border-slate-800 bg-slate-950/80 backdrop-blur-md">
+    <div className="sticky top-0 z-20 border-b bg-white/80 backdrop-blur-md">
       <div className="flex items-center justify-between gap-4 px-6 py-4">
         <div>
           <div className="text-sm text-slate-500">System of Quality Management</div>
@@ -360,7 +360,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="flex min-h-screen">
         <Sidebar page={page} setPage={setPage} />
         <main className="flex-1 min-w-0"><TopBar /><div className="p-6 lg:p-8">{pages[page] || <DashboardPage setPage={setPage} />}</div></main>

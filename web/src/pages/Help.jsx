@@ -67,17 +67,17 @@ export default function Help() {
   return (
     <div>
       <div className="text-sm text-slate-500 mb-2">Help & Tutorials</div>
-      <h1 className="text-3xl font-semibold tracking-tight text-white mb-2">How to use the ISQM-1 Builder</h1>
+      <h1 className="text-3xl font-semibold tracking-tight text-slate-900 mb-2">How to use the ISQM-1 Builder</h1>
       <p className="text-slate-400 mb-6 max-w-2xl">Comprehensive guide for the CLA Romania audit team. Search or browse by topic.</p>
 
-      <input className="w-full max-w-md rounded-xl bg-slate-800 border border-slate-700 text-white px-4 py-2.5 text-sm placeholder:text-slate-600 mb-6"
+      <input className="w-full max-w-md rounded-xl bg-white border border-slate-200 text-slate-900 px-4 py-2.5 text-sm placeholder:text-slate-600 mb-6"
         placeholder="Search help topics..." value={search} onChange={e => setSearch(e.target.value)} />
 
       <div className="grid gap-6 xl:grid-cols-[220px_1fr]">
         <div className="space-y-1">
           {SECTIONS.map(s => (
             <button key={s.id} onClick={() => { setActiveSection(s.id); setSearch(''); }}
-              className={`w-full rounded-xl px-4 py-2.5 text-left text-sm transition ${activeSection === s.id && !search ? 'bg-white text-slate-900 font-medium shadow-sm' : 'text-slate-400 hover:bg-slate-800'}`}>
+              className={`w-full rounded-xl px-4 py-2.5 text-left text-sm transition ${activeSection === s.id && !search ? 'bg-white text-slate-900 font-medium shadow-sm' : 'text-slate-400 hover:bg-white'}`}>
               {s.title}
             </button>
           ))}
@@ -86,10 +86,10 @@ export default function Help() {
         <div className="space-y-3">
           {search && <div className="text-sm text-slate-500 mb-2">{filtered.length} result{filtered.length !== 1 ? 's' : ''} for "{search}"</div>}
           {filtered.map((item, i) => (
-            <Card key={i} className="rounded-2xl border-slate-700 bg-slate-900/50">
+            <Card key={i} className="rounded-2xl border-slate-200 bg-slate-50">
               <CardContent className="p-5">
-                <div className="font-medium text-white mb-2">{item.q}</div>
-                {search && item.section && <Badge className="rounded-full bg-slate-800 text-slate-400 mb-2">{item.section}</Badge>}
+                <div className="font-medium text-slate-900 mb-2">{item.q}</div>
+                {search && item.section && <Badge className="rounded-full bg-white text-slate-400 mb-2">{item.section}</Badge>}
                 <div className="text-sm text-slate-400 leading-relaxed whitespace-pre-line">{item.a}</div>
               </CardContent>
             </Card>
