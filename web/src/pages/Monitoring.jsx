@@ -18,15 +18,46 @@ export default function Monitoring() {
   const [activities, setActivities] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const [form, setForm] = useState({ title: '', method: 'file_review', result: 'pass', notes: '' });
+  const [form, setForm] = useState({ title: '', method: 'file_review', result: 'pass', notes: '', severity: 'medium' });
   const [showValidation, setShowValidation] = useState(false);
+  const [showDefPrompt, setShowDefPrompt] = useState(null); // holds saved activity data for deficiency creation
+  const [defSaving, setDefSaving] = useState(false);
 
   useEffect(() => { loadActivities(); }, []);
   async function loadActivities() { try { const { data } = await api.get('/api/monitoring'); setActivities(data); } catch (e) { console.error(e); } }
 
   async function addActivity() {
     if (!form.title) { setShowValidation(true); return; }
-    try { await api.post('/api/monitoring', { ...form, performed_at: new Date().toISOString().split('T')[0] }); setForm({ title: '', method: 'file_review', result: 'pass', notes: '' }); setShowAdd(false); setShowValidation(false); loadActivities(); } catch (e) { alert(e.response?.data?.error || e.message); }
+    try {
+      await api.post('/api/monitoring', { ...form, performed_at: new Date().toISOString().split('T')[0] });
+      const wasIssue = form.result === 'issue_found';
+      const savedForm = { ...form };
+      setForm({ title: '', method: 'file_review', result: 'pass', notes: '', severity: 'medium' });
+      setShowAdd(false); setShowValidation(false);
+      loadActivities();
+      // If issue found, prompt to create deficiency
+      if (wasIssue) setShowDefPrompt(savedForm);
+    } catch (e) { alert(e.response?.data?.error || e.message); }
+  }
+
+  async function createDeficiencyFromFinding() {
+    if (!showDefPrompt) return;
+    setDefSaving(true);
+    try {
+      await api.post('/api/monitoring/deficiencies', {
+        title: 'Finding: ' + showDefPrompt.title,
+        description: showDefPrompt.notes || 'Issue found during ' + (showDefPrompt.method || 'monitoring') + ' activity.',
+        severity: showDefPrompt.severity || 'medium',
+        root_cause: '',
+        due_date: new Date(Date.now() + 90 * 86400000).toISOString().split('T')[0] // 90 days from now
+      });
+      setDefSaving(false);
+      setShowDefPrompt(null);
+      alert('Deficiency created. View it in the Deficiencies page.');
+    } catch (e) {
+      setDefSaving(false);
+      alert(e.response?.data?.error || 'Failed to create deficiency');
+    }
   }
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -95,8 +126,21 @@ export default function Monitoring() {
                   <select className="mt-1 w-full rounded-xl bg-white border border-slate-200 text-slate-900 px-3 py-2 text-sm" value={form.result} onChange={e => set('result', e.target.value)}>
                     <option value="pass">Pass — no issues</option><option value="issue_found">Issue found</option>
                   </select>
-                  <HelperText>Did you find any issues? If yes, create a deficiency after saving.</HelperText>
+                  <HelperText>Did you find any issues? If yes, you can create a deficiency after saving.</HelperText>
                 </div>
+              </div>
+              {form.result === 'issue_found' && (
+                <div>
+                  <FieldLabel label="Issue severity" />
+                  <select className="mt-1 w-full rounded-xl bg-white border border-slate-200 text-slate-900 px-3 py-2 text-sm" value={form.severity} onChange={e => set('severity', e.target.value)}>
+                    <option value="high">High — significant quality impact</option>
+                    <option value="medium">Medium — moderate quality impact</option>
+                    <option value="low">Low — minor quality impact</option>
+                  </select>
+                  <HelperText>How severe is this finding? This will pre-fill the deficiency severity if you create one.</HelperText>
+                </div>
+              )}
+              <div style={{display:'none'}}>
               </div>
               <div>
                 <FieldLabel label="Notes and observations" />
@@ -141,6 +185,35 @@ export default function Monitoring() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Deficiency creation prompt */}
+      {showDefPrompt && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <Card className="rounded-3xl w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Issue found — create deficiency?</CardTitle>
+              <CardDescription>You recorded a monitoring activity with an issue. Create a deficiency to track remediation.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="rounded-2xl border p-3 text-sm">
+                <div className="font-medium text-slate-900">{showDefPrompt.title}</div>
+                <div className="text-slate-500 mt-1">{showDefPrompt.notes || 'No notes'}</div>
+                <div className="mt-2">
+                  <Badge className={`rounded-full px-3 py-1 ${showDefPrompt.severity === 'high' ? 'bg-rose-100 text-rose-700' : showDefPrompt.severity === 'low' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                    {showDefPrompt.severity} severity
+                  </Badge>
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end pt-2">
+                <Button variant="outline" className="rounded-2xl" onClick={() => setShowDefPrompt(null)}>Skip</Button>
+                <Button className="rounded-2xl" onClick={createDeficiencyFromFinding} disabled={defSaving}>
+                  {defSaving ? 'Creating...' : 'Create deficiency'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

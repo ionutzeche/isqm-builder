@@ -43,7 +43,16 @@ export default function Deficiencies() {
     try { await api.post('/api/monitoring/remediation', { deficiency_id: defId, ...newRem }); setNewRem({ description: '', target_date: '' }); setShowRemediation(null); loadData(); } catch (e) { alert(e.response?.data?.error || e.message); }
   }
 
-  async function updateDefStatus(id, status) { try { await api.put(`/api/monitoring/deficiencies/${id}`, { status }); loadData(); } catch (e) { console.error(e); } }
+  async function updateDefStatus(id, status) {
+    if (status === 'closed') {
+      const pendingRemediations = remediations.filter(r => r.deficiency_id === id && r.status !== 'completed');
+      if (pendingRemediations.length > 0) {
+        alert(`Cannot close: ${pendingRemediations.length} remediation action${pendingRemediations.length > 1 ? 's' : ''} still pending. Complete all remediation actions before closing this deficiency.`);
+        return;
+      }
+    }
+    try { await api.put(`/api/monitoring/deficiencies/${id}`, { status }); loadData(); } catch (e) { console.error(e); }
+  }
   async function completeRemediation(id) { try { await api.put(`/api/monitoring/remediation/${id}`, { status: 'completed', completed_at: new Date().toISOString() }); loadData(); } catch (e) { console.error(e); } }
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));

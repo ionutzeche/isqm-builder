@@ -33,13 +33,6 @@ const NAV_GROUPS = [
 ];
 const NAV_ICONS = { Dashboard: LayoutDashboard, 'Firm Setup': Building2, 'Quality System': FolderKanban, 'Risk Register': AlertTriangle, 'Add Risk': AlertTriangle, 'Responses & Controls': ShieldCheck, Monitoring: ClipboardList, Deficiencies: AlertTriangle, 'Annual Assessment': CheckCircle2, Documents: FileText, Import: FileText, Help: FileText, Admin: Settings };
 
-const DOCUMENTS = [
-  { name: 'ISQM-1 Manual — CLA Romania', version: 'v1', status: 'Draft', date: '2026-03-27' },
-  { name: 'Quality Risk Register', version: 'v3', status: 'Draft', date: '2026-03-27' },
-  { name: 'Responses & Controls Matrix', version: 'v2', status: 'Draft', date: '2026-03-25' },
-  { name: 'Monitoring Plan 2026', version: 'v1', status: 'Approved', date: '2026-01-15' },
-  { name: 'Annual Assessment Report', version: 'v0', status: 'Not started', date: '—' },
-];
 
 function cn(...classes) { return classes.filter(Boolean).join(' '); }
 
@@ -498,34 +491,114 @@ function FirmSetupPage() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// DOCUMENTS (unchanged — static for now)
+// DOCUMENTS — live API data
 // ═══════════════════════════════════════════════════════════════
 function DocumentsPage() {
+  const [docs, setDocs] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+
+  const DOC_TYPES = [
+    { type: 'manual', label: 'ISQM-1 Manual', desc: 'Full quality management manual with firm profile, components, objectives, risks, and responses' },
+    { type: 'risk_register', label: 'Quality Risk Register', desc: 'All quality risks with scoring, owners, and mitigation status' },
+    { type: 'deficiency_log', label: 'Deficiency Log', desc: 'All deficiencies with severity, remediation status, and root cause analysis' },
+    { type: 'assessment_report', label: 'Annual Assessment Report', desc: 'Assessment conclusion, risk review, deficiency review, sign-off status' },
+  ];
+
+  useEffect(() => {
+    api.get('/api/documents').then(r => { setDocs(r.data || []); setLoading(false); }).catch(() => setLoading(false));
+  }, []);
+
+  function generateDoc(type) {
+    setGenerating(true);
+    api.post('/api/documents/generate', { type })
+      .then(r => {
+        const newDoc = r.data;
+        setDocs(prev => [newDoc, ...prev]);
+        setSelected(newDoc);
+        setGenerating(false);
+      })
+      .catch(err => { alert(err.response?.data?.error || 'Generation failed'); setGenerating(false); });
+  }
+
+  function approveDoc(id) {
+    api.post(`/api/documents/${id}/approve`)
+      .then(r => {
+        setDocs(prev => prev.map(d => d.id === id ? { ...d, status: 'approved' } : d));
+        if (selected?.id === id) setSelected(s => ({ ...s, status: 'approved' }));
+      })
+      .catch(err => alert(err.response?.data?.error || 'Approval failed'));
+  }
+
+  const typeLabel = { manual: 'ISQM-1 Manual', risk_register: 'Risk Register', deficiency_log: 'Deficiency Log', assessment_report: 'Assessment Report' };
+
   return (
     <div>
-      <PageHeader eyebrow="Documents — CLA Romania" title="Generate and govern ISQM-1 outputs" subtitle="Documents generated from structured system data. Approved versions are immutable."
-        actions={[<Button key="1" className="rounded-2xl">Generate document</Button>, <Button key="2" variant="outline" className="rounded-2xl">Export PDF</Button>]} />
+      <PageHeader eyebrow="Documents — CLA Romania" title="Generate and govern ISQM-1 outputs"
+        subtitle={`${docs.length} document${docs.length !== 1 ? 's' : ''} generated. Approved versions are immutable.`} />
       <div className="grid gap-6 xl:grid-cols-[0.9fr_1.3fr_0.8fr]">
-        <Card className="rounded-3xl"><CardHeader><CardTitle>Document types</CardTitle></CardHeader>
-          <CardContent className="space-y-2">{DOCUMENTS.map(doc => (
-            <button key={doc.name} className="w-full rounded-2xl border p-4 text-left hover:bg-slate-50 transition"><div className="font-medium text-slate-900">{doc.name}</div><div className="text-sm text-slate-500 mt-1">{doc.version} · {doc.status} · {doc.date}</div></button>
-          ))}</CardContent>
+        {/* Generate */}
+        <div className="space-y-4">
+          <Card className="rounded-3xl"><CardHeader><CardTitle>Generate new</CardTitle></CardHeader>
+            <CardContent className="space-y-2">{DOC_TYPES.map(dt => (
+              <button key={dt.type} className="w-full rounded-2xl border p-4 text-left hover:bg-slate-50 transition" onClick={() => generateDoc(dt.type)} disabled={generating}>
+                <div className="font-medium text-slate-900">{dt.label}</div>
+                <div className="text-sm text-slate-500 mt-1">{dt.desc}</div>
+              </button>
+            ))}</CardContent>
+          </Card>
+          {docs.length > 0 && (
+            <Card className="rounded-3xl"><CardHeader><CardTitle>History ({docs.length})</CardTitle></CardHeader>
+              <CardContent className="space-y-2">{docs.map(d => (
+                <button key={d.id} className={`w-full rounded-2xl border p-3 text-left hover:bg-slate-50 transition text-sm ${selected?.id === d.id ? 'border-slate-900 bg-slate-50' : ''}`} onClick={() => setSelected(d)}>
+                  <div className="font-medium text-slate-900">{typeLabel[d.type] || d.type}</div>
+                  <div className="text-slate-500 mt-0.5">v{d.version} · {d.status} · {new Date(d.created_at).toLocaleDateString('en-GB')}</div>
+                </button>
+              ))}</CardContent>
+            </Card>
+          )}
+        </div>
+        {/* Preview */}
+        <Card className="rounded-3xl">
+          <CardHeader><CardTitle>Preview</CardTitle>{selected && <CardDescription>{typeLabel[selected.type]} v{selected.version}</CardDescription>}</CardHeader>
+          <CardContent>
+            {loading ? <Spinner /> : !selected ? (
+              <div className="text-center py-16 text-slate-400">
+                <FileText className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                <div className="font-medium">Select a document or generate one</div>
+                <div className="text-sm mt-1">Click any document type on the left to generate from live data</div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border bg-slate-50 p-6 min-h-[420px] space-y-3">
+                <div className="flex items-center justify-between">
+                  <StatusBadge value={selected.status === 'approved' ? 'Approved' : 'Draft'} />
+                  <span className="text-xs text-slate-400 font-mono">v{selected.version} · {new Date(selected.created_at).toLocaleDateString('en-GB')}</span>
+                </div>
+                <h3 className="text-xl font-semibold text-slate-900">{typeLabel[selected.type] || selected.type}</h3>
+                <p className="text-sm text-slate-600 leading-6">Generated from live system data on {new Date(selected.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}. Contains current state of all {selected.type === 'manual' ? 'components, objectives, risks, and responses' : selected.type === 'risk_register' ? 'quality risks with scoring and owners' : selected.type === 'deficiency_log' ? 'deficiencies with remediation status' : 'assessment conclusions and sign-off data'}.</p>
+                <Separator />
+                <div className="text-xs text-slate-400">Full document content stored in database. Export to PDF coming in Wave 2.</div>
+              </div>
+            )}
+          </CardContent>
         </Card>
-        <Card className="rounded-3xl"><CardHeader><CardTitle>Preview</CardTitle><CardDescription>ISQM-1 Manual — CLA Romania</CardDescription></CardHeader>
-          <CardContent><div className="rounded-2xl border bg-slate-50 p-6 min-h-[420px] space-y-4">
-            <div className="text-xs uppercase tracking-wide text-slate-500">Section 1</div>
-            <h3 className="text-2xl font-semibold">Nature and circumstances of the firm</h3>
-            <p className="text-slate-700 leading-7">CLA Romania SRL is a member firm of CLA Global, registered in Bucharest. The firm delivers Audit, Tax Compliance, Tax Advisory, BPS, Legal, Transfer Pricing, Mobility, and M&A services through 42 professionals across 8 practices.</p>
-            <Separator />
-            <div className="text-xs uppercase tracking-wide text-slate-500">Section 2</div>
-            <h3 className="text-xl font-semibold">Governance and leadership</h3>
-            <p className="text-slate-700 leading-7">Quality governance is led by the Quality & Risk Partner. Quality is discussed at every partner meeting and forms part of partner performance evaluation.</p>
-          </div></CardContent>
-        </Card>
+        {/* Metadata */}
         <Card className="rounded-3xl"><CardHeader><CardTitle>Metadata</CardTitle></CardHeader>
           <CardContent className="space-y-4 text-sm">
-            <MetaRow label="Version" value="v1 (Draft)" /><MetaRow label="Status" value="Draft" /><MetaRow label="Generated" value="27 Mar 2026" /><MetaRow label="Firm" value="CLA Romania SRL" /><MetaRow label="Regulator" value="CAFR" />
-            <Separator /><div className="flex flex-col gap-2"><Button className="rounded-2xl">Approve version</Button><Button variant="outline" className="rounded-2xl">Save as new version</Button></div>
+            {selected ? (<>
+              <MetaRow label="Type" value={typeLabel[selected.type] || selected.type} />
+              <MetaRow label="Version" value={`v${selected.version} (${selected.status})`} />
+              <MetaRow label="Generated" value={new Date(selected.created_at).toLocaleDateString('en-GB')} />
+              <MetaRow label="Status" value={selected.status} />
+              <MetaRow label="Firm" value="CLA Romania SRL" />
+              <MetaRow label="Regulator" value="CAFR" />
+              <Separator />
+              <div className="flex flex-col gap-2">
+                {selected.status !== 'approved' && <Button className="rounded-2xl" onClick={() => approveDoc(selected.id)}>Approve version</Button>}
+                <Button variant="outline" className="rounded-2xl" onClick={() => generateDoc(selected.type)}>Generate new version</Button>
+              </div>
+            </>) : <div className="text-slate-400">Select a document to view metadata</div>}
           </CardContent>
         </Card>
       </div>
