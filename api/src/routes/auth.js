@@ -26,6 +26,24 @@ router.post('/login', async (req, res) => {
 
 router.get('/me', auth, (req, res) => res.json(req.user));
 
+// Create user (admin only)
+router.post('/users', auth, async (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
+  const { email, name, role } = req.body;
+  if (!email || !name) return res.status(400).json({ error: 'email and name required' });
+  try {
+    const hash = await bcrypt.hash('cla2026', 10);
+    const r = await pool.query(
+      'INSERT INTO users (organization_id, email, name, password_hash, role, must_change_password) VALUES ($1,$2,$3,$4,$5,true) RETURNING id, email, name, role',
+      [req.user.organization_id, email, name, hash, role || 'staff']
+    );
+    res.status(201).json(r.rows[0]);
+  } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ error: 'User already exists' });
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // List all users in organization
 router.get('/users', auth, async (req, res) => {
   try {
