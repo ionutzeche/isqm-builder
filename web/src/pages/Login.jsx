@@ -71,9 +71,17 @@ export default function Login({ onLogin }) {
               <div>
                 <label className="text-sm font-medium text-slate-700 mb-1 block">Confirm password</label>
                 <Input className="rounded-2xl" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Type it again" />
+                {confirmPassword.length > 0 && (
+                  <div className={`text-xs mt-1.5 ${newPassword === confirmPassword ? 'text-emerald-600' : 'text-rose-500'}`}>
+                    {newPassword === confirmPassword ? '✓ Passwords match' : '✗ Passwords do not match'}
+                  </div>
+                )}
+                {newPassword.length > 0 && newPassword.length < 6 && (
+                  <div className="text-xs mt-1 text-amber-600">Password must be at least 6 characters ({6 - newPassword.length} more needed)</div>
+                )}
               </div>
               {error && <div className="text-sm text-rose-600 bg-rose-50 rounded-xl p-3">{error}</div>}
-              <Button className="rounded-2xl w-full" type="submit">Set password and continue</Button>
+              <Button className="rounded-2xl w-full" type="submit" disabled={newPassword.length < 6 || newPassword !== confirmPassword}>Set password and continue</Button>
             </form>
           </CardContent>
         </Card>

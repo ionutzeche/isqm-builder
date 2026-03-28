@@ -16,8 +16,10 @@ import api from '@/api';
 export default function ResponsesControls() {
   const [responses, setResponses] = useState([]);
   const [controls, setControls] = useState([]);
+  const [risks, setRisks] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
   const [showAddControl, setShowAddControl] = useState(null);
+  const [showLinkRisk, setShowLinkRisk] = useState(null); // response id
   const [showHelp, setShowHelp] = useState(false);
   const [newResp, setNewResp] = useState({ title: '', description: '', frequency: 'quarterly' });
   const [newCtrl, setNewCtrl] = useState({ title: '', description: '', control_type: 'manual', evidence_required: '' });
@@ -27,7 +29,12 @@ export default function ResponsesControls() {
   useEffect(() => { loadData(); }, []);
 
   async function loadData() {
-    try { const [r, c] = await Promise.all([api.get('/api/responses'), api.get('/api/responses/controls')]); setResponses(r.data); setControls(c.data); } catch (e) { console.error(e); }
+    try {
+      const [r, c, rk] = await Promise.all([
+        api.get('/api/responses'), api.get('/api/responses/controls'), api.get('/api/risks')
+      ]);
+      setResponses(r.data); setControls(c.data); setRisks(rk.data || []);
+    } catch (e) { console.error(e); }
   }
 
   async function addResponse() {
@@ -41,7 +48,11 @@ export default function ResponsesControls() {
   }
 
   async function addFromTemplate(t) {
-    try { await api.post('/api/responses', { title: t.title, description: t.desc, frequency: t.freq }); loadData(); setTab('responses'); } catch (e) { alert(e.message); }
+    try { const r = await api.post('/api/responses', { title: t.title, description: t.desc, frequency: t.freq }); loadData(); setTab('responses'); setShowLinkRisk(r.data?.id || null); } catch (e) { alert(e.message); }
+  }
+
+  async function linkRisk(responseId, riskId) {
+    try { await api.post('/api/responses/link-risk', { response_id: responseId, risk_id: riskId }); setShowLinkRisk(null); loadData(); } catch (e) { alert(e.response?.data?.error || e.message); }
   }
 
   const effColor = (s) => s === 'effective' ? 'bg-emerald-100 text-emerald-600' : s === 'ineffective' ? 'bg-rose-100 text-rose-600' : 'bg-slate-200 text-slate-400';
@@ -119,10 +130,10 @@ export default function ResponsesControls() {
             <CardContent className="p-0">
               <Table>
                 <TableHeader><TableRow className="border-slate-200">
-                  <TableHead className="text-slate-500">Response</TableHead><TableHead className="text-slate-500">Frequency</TableHead><TableHead className="text-slate-500">Linked risks</TableHead><TableHead className="text-slate-500">Effectiveness</TableHead><TableHead className="text-slate-500"></TableHead>
+                  <TableHead className="text-slate-500">Response</TableHead><TableHead className="text-slate-500">Frequency</TableHead><TableHead className="text-slate-500">Linked risks</TableHead><TableHead className="text-slate-500">Effectiveness</TableHead><TableHead className="text-slate-500">Actions</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
-                  {responses.length === 0 && <TableRow className="border-slate-200"><TableCell colSpan={5} className="text-center py-8 text-slate-600">No responses yet. Add one or use the Templates tab to start from a standard pattern.</TableCell></TableRow>}
+                  {responses.length === 0 && <TableRow className="border-slate-200"><TableCell colSpan={6} className="text-center py-8 text-slate-600">No responses yet. Add one or use the Templates tab to start from a standard pattern.</TableCell></TableRow>}
                   {responses.map(r => (
                     <React.Fragment key={r.id}>
                       <TableRow className="border-slate-200 hover:bg-slate-50">
@@ -130,10 +141,35 @@ export default function ResponsesControls() {
                         <TableCell><Badge variant="outline" className="rounded-full border-slate-200 text-slate-400">{r.frequency?.replace('_', ' ') || '—'}</Badge></TableCell>
                         <TableCell className="text-sm font-mono text-slate-400">{r.linked_risks || 0}</TableCell>
                         <TableCell><Badge className={`rounded-full px-3 py-1 ${effColor(r.effectiveness_status)}`}>{r.effectiveness_status}</Badge></TableCell>
-                        <TableCell><Button variant="outline" className="rounded-xl text-xs border-slate-200 text-slate-400" onClick={() => setShowAddControl(showAddControl === r.id ? null : r.id)}>+ Control</Button></TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button variant="outline" className="rounded-xl text-xs border-slate-200 text-slate-400" onClick={() => setShowLinkRisk(showLinkRisk === r.id ? null : r.id)}>Link risk</Button>
+                            <Button variant="outline" className="rounded-xl text-xs border-slate-200 text-slate-400" onClick={() => setShowAddControl(showAddControl === r.id ? null : r.id)}>+ Control</Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
+                      {showLinkRisk === r.id && (
+                        <TableRow className="border-slate-200"><TableCell colSpan={6} className="bg-blue-50">
+                          <div className="p-3">
+                            <div className="text-sm font-medium text-blue-700 mb-2">Link this response to a quality risk</div>
+                            {risks.filter(rk => rk.status !== 'archived').length === 0 ? (
+                              <div className="text-sm text-slate-500">No risks in the register yet. Add risks first.</div>
+                            ) : (
+                              <div className="grid gap-2 max-h-48 overflow-y-auto">
+                                {risks.filter(rk => rk.status !== 'archived').map(rk => (
+                                  <button key={rk.id} onClick={() => linkRisk(r.id, rk.id)} className="w-full text-left rounded-xl border border-blue-200 bg-white p-3 hover:bg-blue-50 transition text-sm">
+                                    <div className="font-medium text-slate-900">{rk.title}</div>
+                                    <div className="text-xs text-slate-500 mt-0.5">{rk.component_name} · Residual: {rk.residual_score || '—'}</div>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            <Button variant="outline" className="rounded-xl text-xs mt-2" onClick={() => setShowLinkRisk(null)}>Cancel</Button>
+                          </div>
+                        </TableCell></TableRow>
+                      )}
                       {showAddControl === r.id && (
-                        <TableRow className="border-slate-200"><TableCell colSpan={5} className="bg-slate-50">
+                        <TableRow className="border-slate-200"><TableCell colSpan={6} className="bg-slate-50">
                           <div className="p-3 space-y-3">
                             <div className="text-sm font-medium text-slate-700">Add control to this response</div>
                             <div className="flex gap-3 items-end">
