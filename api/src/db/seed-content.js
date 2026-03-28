@@ -172,6 +172,66 @@ module.exports = {
     { ref: '1.4.8', name: 'Procedura privind utilizarea suportilor de memorie externa', component: 'F', description: 'External storage device policy — USB restrictions, encryption requirements, approved devices. Prevents unauthorized data transfer.' },
   ],
 
+  // Quality objectives — 3 per component (24 total), aligned with ISQM-1 standard
+  qualityObjectives: [
+    // Component A — Governance & Leadership
+    { componentCode: 'A', title: 'Firm leadership demonstrates commitment to quality' },
+    { componentCode: 'A', title: 'Quality policies are communicated and understood' },
+    { componentCode: 'A', title: 'Organizational structure supports quality management' },
+    // Component B — Relevant Ethical Requirements
+    { componentCode: 'B', title: 'Personnel fulfil ethical requirements including independence' },
+    { componentCode: 'B', title: 'Identified threats to independence are evaluated and addressed' },
+    { componentCode: 'B', title: 'Firm has policies for accepting/declining client relationships' },
+    // Component C — Acceptance & Continuance
+    { componentCode: 'C', title: 'Client acceptance decisions consider firm capability and capacity' },
+    { componentCode: 'C', title: 'Appropriate acceptance and continuance procedures are performed' },
+    { componentCode: 'C', title: 'Client risk assessments are documented' },
+    // Component D — Engagement Performance
+    { componentCode: 'D', title: 'Engagement teams exercise professional judgment and scepticism' },
+    { componentCode: 'D', title: 'Consultation occurs on difficult or contentious matters' },
+    { componentCode: 'D', title: 'Engagement documentation is assembled timely' },
+    // Component E — Resources
+    { componentCode: 'E', title: 'Sufficient personnel with competence are assigned' },
+    { componentCode: 'E', title: 'Technology resources support quality' },
+    { componentCode: 'E', title: 'Intellectual resources are current and accessible' },
+    // Component F — Information & Communication
+    { componentCode: 'F', title: 'Information relevant to quality is communicated internally' },
+    { componentCode: 'F', title: 'External communications are appropriate' },
+    { componentCode: 'F', title: 'Information system supports quality management' },
+    // Component G — Monitoring & Remediation
+    { componentCode: 'G', title: 'Monitoring activities provide relevant information' },
+    { componentCode: 'G', title: 'Root cause analysis is performed for identified deficiencies' },
+    { componentCode: 'G', title: 'Remedial actions are taken for identified deficiencies' },
+    // Component H — Risk Assessment Process
+    { componentCode: 'H', title: 'Quality risks are identified and assessed' },
+    { componentCode: 'H', title: 'Conditions/events relevant to quality are identified' },
+    { componentCode: 'H', title: 'Responses to quality risks are designed and implemented' },
+  ],
+
+  // Standard responses — 8 templates with risk linkages by component code
+  standardResponses: [
+    { title: 'Independence confirmation process', frequency: 'annual', description: 'Annual independence declarations by all professional staff. Confirms compliance with IESBA Code and local requirements.', linkToComponent: 'B' },
+    { title: 'Engagement Quality Review (EQR) trigger', frequency: 'ad_hoc', description: 'EQR performed for listed entities, PIE audits, and engagements with significant public interest. Triggered by engagement risk criteria.', linkToComponent: 'D' },
+    { title: 'Cold file review programme', frequency: 'quarterly', description: 'Periodic review of completed engagement files by independent reviewer. Assesses compliance with methodology and documentation standards.', linkToComponent: 'G' },
+    { title: 'Client acceptance AML/KYC', frequency: 'ad_hoc', description: 'Anti-money laundering and know-your-client due diligence performed for all new client acceptances. Includes PEP screening and sanctions checks.', linkToComponent: 'C' },
+    { title: 'Consultation escalation protocol', frequency: 'ad_hoc', description: 'Mandatory consultation process for complex technical matters. Escalation to technical partner or CLA Global network resources.', linkToComponent: 'D' },
+    { title: 'Methodology update distribution', frequency: 'quarterly', description: 'Distribution of updated audit methodology, templates, and guidance materials to all engagement teams via CaseWare Cloud and SharePoint.', linkToComponent: 'E' },
+    { title: 'CPD compliance tracking', frequency: 'quarterly', description: 'Monitoring of continuing professional development hours and compliance with CAFR and CLA Global training requirements.', linkToComponent: 'E' },
+    { title: 'File assembly deadline monitoring', frequency: 'monthly', description: 'Monthly monitoring of engagement file assembly deadlines. Tracking 60-day lock-down compliance for completed engagements.', linkToComponent: 'D' },
+  ],
+
+  // Practices — CLA Romania service lines
+  practices: [
+    { name: 'Audit', headcount: 8, partner_count: 1, is_regulated: true },
+    { name: 'Tax Compliance', headcount: 6, partner_count: 1, is_regulated: false },
+    { name: 'Tax Advisory', headcount: 5, partner_count: 1, is_regulated: false },
+    { name: 'BPS', headcount: 10, partner_count: 1, is_regulated: false },
+    { name: 'Legal', headcount: 4, partner_count: 1, is_regulated: false },
+    { name: 'Transfer Pricing', headcount: 3, partner_count: 0, is_regulated: false },
+    { name: 'Mobility', headcount: 3, partner_count: 0, is_regulated: false },
+    { name: 'M&A', headcount: 3, partner_count: 0, is_regulated: false },
+  ],
+
   securityProcedure: {
     source: 'Procedura de management al incidentelor de securitate a informatiei — UPDATED',
     isqmComponents: ['F', 'E'],

@@ -176,6 +176,66 @@ app.get('/api/seed', async (req, res) => {
       }
     }
 
+    // Seed additional quality objectives (3 per component)
+    let addlObjCount = 0;
+    if (content.qualityObjectives) {
+      for (const obj of content.qualityObjectives) {
+        const compMatch = content.components.find(c => c.code === obj.componentCode);
+        if (!compMatch) continue;
+        const cId = compMap[compMatch.order];
+        if (!cId) continue;
+        const ownerId = userMap[compMatch.ownerEmail] || null;
+        const check = await pool.query('SELECT id FROM quality_objectives WHERE organization_id=$1 AND component_id=$2 AND title=$3', [orgId, cId, obj.title]);
+        if (!check.rows.length) {
+          await pool.query('INSERT INTO quality_objectives (organization_id, component_id, title, description, owner_id, status) VALUES ($1,$2,$3,$4,$5,$6)',
+            [orgId, cId, obj.title, 'ISQM-1 standard objective — Component ' + obj.componentCode, ownerId, 'draft']);
+          addlObjCount++;
+        }
+      }
+    }
+
+    // Seed standard responses with risk linkages
+    let stdRespCount = 0;
+    if (content.standardResponses) {
+      for (const sr of content.standardResponses) {
+        const check = await pool.query('SELECT id FROM responses WHERE organization_id=$1 AND title=$2', [orgId, sr.title]);
+        let respId;
+        const srComp = content.components.find(c => c.code === sr.linkToComponent);
+        if (!check.rows.length) {
+          const ownerId = srComp ? (userMap[srComp.ownerEmail] || null) : null;
+          const rResp = await pool.query('INSERT INTO responses (organization_id, title, description, owner_id, frequency, effectiveness_status) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id',
+            [orgId, sr.title, sr.description, ownerId, sr.frequency, 'unknown']);
+          respId = rResp.rows[0].id;
+          stdRespCount++;
+        } else {
+          respId = check.rows[0].id;
+        }
+        // Link to all risks in the matching component
+        if (srComp) {
+          const cId = compMap[srComp.order];
+          if (cId) {
+            const risks = await pool.query('SELECT id FROM quality_risks WHERE organization_id=$1 AND component_id=$2', [orgId, cId]);
+            for (const risk of risks.rows) {
+              await pool.query('INSERT INTO risk_responses (risk_id, response_id) VALUES ($1,$2) ON CONFLICT DO NOTHING', [risk.id, respId]);
+            }
+          }
+        }
+      }
+    }
+
+    // Seed practices
+    let practiceCount = 0;
+    if (content.practices) {
+      for (const p of content.practices) {
+        const pCheck = await pool.query('SELECT id FROM practices WHERE organization_id=$1 AND name=$2', [orgId, p.name]);
+        if (!pCheck.rows.length) {
+          await pool.query('INSERT INTO practices (organization_id, name, headcount, partner_count, is_regulated) VALUES ($1,$2,$3,$4,$5)',
+            [orgId, p.name, p.headcount, p.partner_count, p.is_regulated]);
+          practiceCount++;
+        }
+      }
+    }
+
     const compCount = await pool.query('SELECT COUNT(*) FROM isqm_components');
     const userCount = await pool.query('SELECT COUNT(*) FROM users');
     const objTotal = await pool.query('SELECT COUNT(*) FROM quality_objectives WHERE organization_id=$1', [orgId]);
@@ -183,7 +243,8 @@ app.get('/api/seed', async (req, res) => {
     const respTotal = await pool.query('SELECT COUNT(*) FROM responses WHERE organization_id=$1', [orgId]);
     const monTotal = await pool.query('SELECT COUNT(*) FROM monitoring_activities WHERE organization_id=$1', [orgId]);
     const defTotal = await pool.query('SELECT COUNT(*) FROM deficiencies WHERE organization_id=$1', [orgId]);
-    res.json({ ok: true, components: parseInt(compCount.rows[0].count), users: parseInt(userCount.rows[0].count), objectives: parseInt(objTotal.rows[0].count), risks: parseInt(riskTotal.rows[0].count), responses: parseInt(respTotal.rows[0].count), monitoring: parseInt(monTotal.rows[0].count), deficiencies: parseInt(defTotal.rows[0].count), seeded: { objectives: objCount, risks: riskCount, responses: respCount, monitoring: monCount, deficiencies: defCount } });
+    const practiceTotal = await pool.query('SELECT COUNT(*) FROM practices WHERE organization_id=$1', [orgId]);
+    res.json({ ok: true, components: parseInt(compCount.rows[0].count), users: parseInt(userCount.rows[0].count), objectives: parseInt(objTotal.rows[0].count), risks: parseInt(riskTotal.rows[0].count), responses: parseInt(respTotal.rows[0].count), monitoring: parseInt(monTotal.rows[0].count), deficiencies: parseInt(defTotal.rows[0].count), practices: parseInt(practiceTotal.rows[0].count), seeded: { objectives: objCount + addlObjCount, risks: riskCount, responses: respCount + stdRespCount, monitoring: monCount, deficiencies: defCount, practices: practiceCount } });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
@@ -339,7 +400,54 @@ app.get('/api/reset', async (req, res) => {
         }
       }
     }
-    res.json({ ok: true, reset: true, components: 8, users: staff.length, objectives: objCount, risks: riskCount, responses: respCount, monitoring: monCount, deficiencies: defCount });
+    // Seed additional quality objectives (3 per component)
+    let addlObjCount = 0;
+    if (content.qualityObjectives) {
+      for (const obj of content.qualityObjectives) {
+        const compMatch = content.components.find(c => c.code === obj.componentCode);
+        if (!compMatch) continue;
+        const cId = compMap[compMatch.order];
+        if (!cId) continue;
+        const ownerId = userMap[compMatch.ownerEmail] || null;
+        await pool.query('INSERT INTO quality_objectives (organization_id, component_id, title, description, owner_id, status) VALUES ($1,$2,$3,$4,$5,$6)',
+          [orgId, cId, obj.title, 'ISQM-1 standard objective — Component ' + obj.componentCode, ownerId, 'draft']);
+        addlObjCount++;
+      }
+    }
+
+    // Seed standard responses with risk linkages
+    let stdRespCount = 0;
+    if (content.standardResponses) {
+      for (const sr of content.standardResponses) {
+        const compMatch = content.components.find(c => c.code === sr.linkToComponent);
+        const ownerId = compMatch ? (userMap[compMatch.ownerEmail] || null) : null;
+        const rResp = await pool.query('INSERT INTO responses (organization_id, title, description, owner_id, frequency, effectiveness_status) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id',
+          [orgId, sr.title, sr.description, ownerId, sr.frequency, 'unknown']);
+        stdRespCount++;
+        // Link to all risks in the matching component
+        if (compMatch) {
+          const cId = compMap[compMatch.order];
+          if (cId) {
+            const risks = await pool.query('SELECT id FROM quality_risks WHERE organization_id=$1 AND component_id=$2', [orgId, cId]);
+            for (const risk of risks.rows) {
+              await pool.query('INSERT INTO risk_responses (risk_id, response_id) VALUES ($1,$2) ON CONFLICT DO NOTHING', [risk.id, rResp.rows[0].id]);
+            }
+          }
+        }
+      }
+    }
+
+    // Seed practices
+    let practiceCount = 0;
+    if (content.practices) {
+      for (const p of content.practices) {
+        await pool.query('INSERT INTO practices (organization_id, name, headcount, partner_count, is_regulated) VALUES ($1,$2,$3,$4,$5)',
+          [orgId, p.name, p.headcount, p.partner_count, p.is_regulated]);
+        practiceCount++;
+      }
+    }
+
+    res.json({ ok: true, reset: true, components: 8, users: staff.length, objectives: objCount + addlObjCount, risks: riskCount, responses: respCount + stdRespCount, monitoring: monCount, deficiencies: defCount, practices: practiceCount });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
