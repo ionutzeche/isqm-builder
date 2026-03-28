@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,8 +10,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
-import { Search, Bell, Building2, ShieldCheck, AlertTriangle, FileText, ClipboardList, LayoutDashboard, Settings, ChevronRight, CheckCircle2, Clock3, Users, FolderKanban } from 'lucide-react';
+import { Search, Bell, Building2, ShieldCheck, AlertTriangle, FileText, ClipboardList, LayoutDashboard, Settings, ChevronRight, CheckCircle2, Clock3, Users, FolderKanban, Loader2, Save } from 'lucide-react';
 import { motion } from 'framer-motion';
+import api from '@/api';
 import QualitySystemPage from '@/pages/QualitySystem';
 import ResponsesControlsPage from '@/pages/ResponsesControls';
 import MonitoringPage from '@/pages/Monitoring';
@@ -30,23 +31,7 @@ const NAV_GROUPS = [
   { label: 'Reporting', items: ['Annual Assessment', 'Documents'] },
   { label: 'System', items: ['Import', 'Help', 'Admin'] },
 ];
-const NAV_ITEMS = NAV_GROUPS.flatMap(g => g.items);
 const NAV_ICONS = { Dashboard: LayoutDashboard, 'Firm Setup': Building2, 'Quality System': FolderKanban, 'Risk Register': AlertTriangle, 'Add Risk': AlertTriangle, 'Responses & Controls': ShieldCheck, Monitoring: ClipboardList, Deficiencies: AlertTriangle, 'Annual Assessment': CheckCircle2, Documents: FileText, Import: FileText, Help: FileText, Admin: Settings };
-
-const KPI_CARDS = [
-  { title: 'Open Quality Risks', value: '29', subtext: '7 high residual · CLA Romania Audit', icon: AlertTriangle },
-  { title: 'Open Deficiencies', value: '4', subtext: 'File review findings, CPD compliance', icon: ClipboardList },
-  { title: 'Assessment Readiness', value: '72%', subtext: 'First evaluation: Dec 2026', icon: CheckCircle2 },
-  { title: 'Controls Requiring Review', value: '8', subtext: 'Next 30 days', icon: Clock3 },
-];
-
-const SAMPLE_RISKS = [
-  { id: 'QR-5.1', title: 'Insufficient qualified staff for engagement demands', component: 'Resources', practice: 'Audit', inherent: 20, residual: 12, owner: 'Laurentiu Vasile', status: 'Active', nextReview: '2026-04-15', description: 'The firm may not have sufficient qualified audit staff during peak periods, creating risk of under-staffed engagement teams.', rootCause: 'Audit staff covering multiple clients simultaneously. Open positions unfilled.' },
-  { id: 'QR-3.1', title: 'Client accepted without adequate risk assessment', component: 'Acceptance & Continuance', practice: 'Audit', inherent: 15, residual: 10, owner: 'Laurentiu Vasile', status: 'Active', nextReview: '2026-05-01', description: 'New audit clients may be accepted without sufficient AML/KYC checks or risk assessment.', rootCause: 'Client acceptance form redesigned Q1 2026 — not yet tested with all partners.' },
-  { id: 'QR-4.2', title: 'Complex matters not escalated for consultation', component: 'Engagement Performance', practice: 'Audit', inherent: 16, residual: 8, owner: 'Laurentiu Vasile', status: 'Mitigated', nextReview: '2026-04-28', description: 'Complex accounting or auditing matters may not be escalated for partner consultation.', rootCause: 'Consultation policy defines triggers but enforcement relies on team judgment.' },
-  { id: 'QR-7.2', title: 'Root causes of deficiencies not identified', component: 'Monitoring & Remediation', practice: 'All', inherent: 20, residual: 16, owner: 'Laurentiu Vasile', status: 'Active', nextReview: '2026-04-30', description: 'When cold file reviews identify issues, root cause analysis may not be performed adequately.', rootCause: 'Root cause analysis process documented but not yet applied to findings.' },
-  { id: 'QR-2.4', title: 'Inadequate safeguards for independence threats', component: 'Relevant Ethical Requirements', practice: 'Audit', inherent: 15, residual: 10, owner: 'Roxana Olteanu', status: 'Active', nextReview: '2026-04-15', description: 'Identified threats to independence may not have adequate documented safeguards.', rootCause: 'Safeguards documentation partially complete. Remaining work covers smaller engagements.' },
-];
 
 const DOCUMENTS = [
   { name: 'ISQM-1 Manual — CLA Romania', version: 'v1', status: 'Draft', date: '2026-03-27' },
@@ -59,20 +44,22 @@ const DOCUMENTS = [
 function cn(...classes) { return classes.filter(Boolean).join(' '); }
 
 function StatusBadge({ value }) {
-  const map = { Draft: 'bg-slate-100 text-slate-700', 'In Review': 'bg-amber-100 text-amber-700', Approved: 'bg-emerald-100 text-emerald-700', Active: 'bg-rose-100 text-rose-700', Mitigated: 'bg-blue-100 text-blue-700', 'Not started': 'bg-slate-100 text-slate-500' };
+  const map = { Draft: 'bg-slate-100 text-slate-700', 'In Review': 'bg-amber-100 text-amber-700', Approved: 'bg-emerald-100 text-emerald-700', Active: 'bg-rose-100 text-rose-700', Mitigated: 'bg-blue-100 text-blue-700', 'Not started': 'bg-slate-100 text-slate-500', active: 'bg-rose-100 text-rose-700', mitigated: 'bg-blue-100 text-blue-700', archived: 'bg-slate-100 text-slate-400' };
   return <Badge className={cn('rounded-full px-3 py-1', map[value] || 'bg-slate-100 text-slate-700')}>{value}</Badge>;
 }
 
 function SeverityBadge({ score }) {
-  const label = score >= 12 ? 'High' : score >= 8 ? 'Medium' : 'Low';
-  const cls = score >= 12 ? 'bg-rose-100 text-rose-700' : score >= 8 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700';
+  const s = parseInt(score) || 0;
+  const label = s >= 12 ? 'High' : s >= 8 ? 'Medium' : 'Low';
+  const cls = s >= 12 ? 'bg-rose-100 text-rose-700' : s >= 8 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700';
   return <Badge className={cn('rounded-full px-3 py-1', cls)}>{label}</Badge>;
 }
 
-function Section({ title, body }) { return <div className="rounded-2xl border p-4"><div className="text-sm text-slate-500 mb-2">{title}</div><div className="text-sm text-slate-700 leading-6">{body}</div></div>; }
+function Spinner() { return <div className="flex items-center justify-center p-12"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>; }
+function Section({ title, body }) { return <div className="rounded-2xl border p-4"><div className="text-sm text-slate-500 mb-2">{title}</div><div className="text-sm text-slate-700 leading-6 whitespace-pre-line">{body}</div></div>; }
 function MetaRow({ label, value }) { return <div className="space-y-1"><div className="text-slate-500">{label}</div><div className="text-slate-900 font-medium">{value}</div></div>; }
 
-function Sidebar({ page, setPage, onLogout }) {
+function Sidebar({ page, setPage, onLogout, readiness }) {
   return (
     <aside className="hidden md:flex md:w-64 md:flex-col border-r border-slate-200 bg-white">
       <div className="p-4 border-b border-slate-100">
@@ -105,9 +92,9 @@ function Sidebar({ page, setPage, onLogout }) {
         <div className="p-3 rounded-xl bg-slate-50 mb-2">
           <div className="flex items-center justify-between mb-1">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Readiness</span>
-            <span className="text-xs font-semibold text-slate-700">72%</span>
+            <span className="text-xs font-semibold text-slate-700">{readiness}%</span>
           </div>
-          <Progress value={72} className="h-1.5" />
+          <Progress value={readiness} className="h-1.5" />
           <div className="text-[10px] text-slate-400 mt-1.5">CAFR evaluation: Dec 2026</div>
         </div>
         {onLogout && <button onClick={onLogout} className="w-full text-left text-xs text-slate-400 hover:text-slate-600 transition px-3 py-1.5">Sign out</button>}
@@ -125,10 +112,6 @@ function TopBar({ user }) {
           <span className="text-xs text-slate-400 hidden sm:inline">SoQM Version 1.0 — March 2026</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="relative hidden lg:block">
-            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-            <Input className="w-56 rounded-xl pl-8 h-8 text-xs" placeholder="Search..." />
-          </div>
           <div className="flex items-center gap-2 pl-2 border-l border-slate-100 ml-1">
             <div className="h-7 w-7 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold">
               {user?.name?.split(' ').map(n => n[0]).join('') || 'U'}
@@ -150,33 +133,82 @@ function PageHeader({ eyebrow, title, subtitle, actions }) {
   );
 }
 
-function KpiCard({ title, value, subtext, icon: Icon }) {
+function KpiCard({ title, value, subtext, icon: Icon, loading }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-      <Card className="rounded-3xl border-slate-200 shadow-sm"><CardContent className="p-6"><div className="flex items-start justify-between"><div><div className="text-sm text-slate-500">{title}</div><div className="text-3xl font-semibold mt-2 text-slate-900">{value}</div><div className="text-sm text-slate-500 mt-2">{subtext}</div></div><div className="h-11 w-11 rounded-2xl bg-slate-100 flex items-center justify-center"><Icon className="h-5 w-5 text-slate-700" /></div></div></CardContent></Card>
+      <Card className="rounded-3xl border-slate-200 shadow-sm"><CardContent className="p-6"><div className="flex items-start justify-between"><div><div className="text-sm text-slate-500">{title}</div><div className="text-3xl font-semibold mt-2 text-slate-900">{loading ? '—' : value}</div><div className="text-sm text-slate-500 mt-2">{subtext}</div></div><div className="h-11 w-11 rounded-2xl bg-slate-100 flex items-center justify-center"><Icon className="h-5 w-5 text-slate-700" /></div></div></CardContent></Card>
     </motion.div>
   );
 }
 
+// ═══════════════════════════════════════════════════════════════
+// DASHBOARD — live API data
+// ══════════════════════════════════════════════════��════════════
 function DashboardPage({ setPage }) {
+  const [risks, setRisks] = useState([]);
+  const [deficiencies, setDeficiencies] = useState([]);
+  const [responses, setResponses] = useState([]);
+  const [objectives, setObjectives] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      api.get('/api/risks').then(r => r.data).catch(() => []),
+      api.get('/api/monitoring/deficiencies').then(r => r.data).catch(() => []),
+      api.get('/api/responses').then(r => r.data).catch(() => []),
+      api.get('/api/objectives').then(r => r.data).catch(() => []),
+    ]).then(([r, d, resp, obj]) => {
+      setRisks(r); setDeficiencies(d); setResponses(resp); setObjectives(obj);
+      setLoading(false);
+    });
+  }, []);
+
+  const activeRisks = risks.filter(r => r.status !== 'archived');
+  const highRisks = activeRisks.filter(r => (r.residual_score || 0) >= 12);
+  const openDef = deficiencies.filter(d => d.status !== 'closed');
+  const implemented = objectives.filter(o => o.status === 'implemented').length;
+  const totalObj = objectives.length || 1;
+  const readiness = Math.round((implemented / totalObj) * 100);
+  const controlsForReview = responses.filter(r => !r.last_review_date || new Date(r.last_review_date) < new Date(Date.now() - 30*86400000)).length;
+
+  // Group risks by component
+  const riskByComponent = {};
+  activeRisks.forEach(r => {
+    const comp = r.component_name || 'Unknown';
+    if (!riskByComponent[comp]) riskByComponent[comp] = { count: 0, totalResidual: 0, owner: r.owner_name || '—' };
+    riskByComponent[comp].count++;
+    riskByComponent[comp].totalResidual += (r.residual_score || 0);
+  });
+  const maxResidual = Math.max(1, ...Object.values(riskByComponent).map(v => v.totalResidual));
+
   return (
     <div>
-      <PageHeader eyebrow="Dashboard — CLA Romania Audit" title="Run your quality system with clarity" subtitle="ISQM-1 compliance tracker for CLA Romania. 8 components, 29 quality risks, 8 monitoring activities. First annual evaluation: December 2026."
+      <PageHeader eyebrow="Dashboard — CLA Romania Audit" title="Run your quality system with clarity"
+        subtitle={`ISQM-1 compliance tracker. ${activeRisks.length} quality risks, ${objectives.length} objectives, ${responses.length} responses. First annual evaluation: December 2026.`}
         actions={[<Button key="1" className="rounded-2xl" onClick={() => setPage('Annual Assessment')}>Start annual assessment</Button>, <Button key="2" variant="outline" className="rounded-2xl" onClick={() => setPage('Documents')}>Generate board summary</Button>]} />
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">{KPI_CARDS.map((card) => <KpiCard key={card.title} {...card} />)}</div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <KpiCard title="Open Quality Risks" value={String(activeRisks.length)} subtext={`${highRisks.length} high residual`} icon={AlertTriangle} loading={loading} />
+        <KpiCard title="Open Deficiencies" value={String(openDef.length)} subtext={openDef.length ? 'Requires remediation' : 'All clear'} icon={ClipboardList} loading={loading} />
+        <KpiCard title="Assessment Readiness" value={`${readiness}%`} subtext="First evaluation: Dec 2026" icon={CheckCircle2} loading={loading} />
+        <KpiCard title="Controls for Review" value={String(controlsForReview)} subtext="Next 30 days" icon={Clock3} loading={loading} />
+      </div>
       <div className="grid gap-4 xl:grid-cols-3 mt-6">
-        <Card className="rounded-3xl xl:col-span-2"><CardHeader><CardTitle>Risk by component — CLA Romania</CardTitle><CardDescription>Residual risk concentration. Focus: Resources and Monitoring & Remediation.</CardDescription></CardHeader>
+        <Card className="rounded-3xl xl:col-span-2"><CardHeader><CardTitle>Risk by component</CardTitle><CardDescription>Residual risk concentration across ISQM-1 components.</CardDescription></CardHeader>
           <CardContent className="space-y-4">
-            {[['Governance & Leadership', 15, 'Laurentiu Vasile'], ['Relevant Ethical Requirements', 20, 'Roxana Olteanu'], ['Acceptance & Continuance', 35, 'Laurentiu Vasile'], ['Engagement Performance', 30, 'Laurentiu Vasile'], ['Resources', 40, 'Alina Ene'], ['Information & Communication', 25, 'Qasim Ranjha'], ['Monitoring & Remediation', 50, 'Laurentiu Vasile'], ['Risk Assessment Process', 22, 'George Chiriac']].map(([label, pct, owner]) => (
-              <div key={label} className="space-y-2"><div className="flex items-center justify-between text-sm"><span className="text-slate-700">{label}</span><span className="text-slate-500">{owner} · {pct}%</span></div><Progress value={pct} className="h-2" /></div>
+            {loading ? <Spinner /> : Object.entries(riskByComponent).sort((a,b) => b[1].totalResidual - a[1].totalResidual).map(([comp, data]) => (
+              <div key={comp} className="space-y-2"><div className="flex items-center justify-between text-sm"><span className="text-slate-700">{comp}</span><span className="text-slate-500">{data.owner} · {data.count} risks</span></div><Progress value={Math.round((data.totalResidual / maxResidual) * 100)} className="h-2" /></div>
             ))}
+            {!loading && Object.keys(riskByComponent).length === 0 && <div className="text-sm text-slate-400 text-center py-8">No risks registered yet. Go to Risk Register to add risks.</div>}
           </CardContent>
         </Card>
         <Card className="rounded-3xl"><CardHeader><CardTitle>Priority actions</CardTitle><CardDescription>Items requiring immediate attention.</CardDescription></CardHeader>
           <CardContent className="space-y-4">
-            {['Run Q1 client acceptance review (overdue)', 'Apply root cause analysis to cold file review findings', 'Complete safeguards documentation — remaining work', 'Define quality infrastructure budget allocation', 'Draft CAFR transparency report', 'Complete CPD catch-up training for shortfall staff'].map((item) => (
-              <div key={item} className="rounded-2xl border p-4 text-sm text-slate-700">{item}</div>
-            ))}
+            {loading ? <Spinner /> : <>
+              {openDef.filter(d => d.severity === 'high').map(d => <div key={d.id} className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">Resolve: {d.title}</div>)}
+              {highRisks.slice(0, 3).map(r => <div key={r.id} className="rounded-2xl border p-4 text-sm text-slate-700">Review high risk: {r.title}</div>)}
+              {controlsForReview > 0 && <div className="rounded-2xl border p-4 text-sm text-slate-700">{controlsForReview} controls due for review in next 30 days</div>}
+              {readiness < 100 && <div className="rounded-2xl border p-4 text-sm text-slate-700">Implement remaining {totalObj - implemented} quality objectives</div>}
+            </>}
           </CardContent>
         </Card>
       </div>
@@ -184,102 +216,216 @@ function DashboardPage({ setPage }) {
   );
 }
 
-function RiskRegisterPage() {
+// ═══════════════════════════════════════════════════════════════
+// RISK REGISTER — live API data
+// ═══════════════════════════════════════════════════════════════
+function RiskRegisterPage({ setPage }) {
+  const [risks, setRisks] = useState([]);
   const [search, setSearch] = useState('');
-  const [selectedRisk, setSelectedRisk] = useState(SAMPLE_RISKS[0]);
-  const filtered = useMemo(() => SAMPLE_RISKS.filter((r) => [r.title, r.component, r.practice, r.owner].join(' ').toLowerCase().includes(search.toLowerCase())), [search]);
+  const [selectedRisk, setSelectedRisk] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadRisks = useCallback(() => {
+    setLoading(true);
+    api.get('/api/risks').then(r => {
+      const data = r.data || [];
+      setRisks(data);
+      if (data.length && !selectedRisk) setSelectedRisk(data[0]);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { loadRisks(); }, [loadRisks]);
+
+  const filtered = useMemo(() => risks.filter(r => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return [r.title, r.component_name, r.practice_name, r.owner_name, r.description].join(' ').toLowerCase().includes(q);
+  }), [search, risks]);
+
+  const activeRisks = filtered.filter(r => r.status !== 'archived');
 
   return (
     <div>
-      <PageHeader eyebrow="Risk Register — CLA Romania" title="Review, score, and manage quality risks" subtitle="29 quality risks across 8 ISQM-1 components. Every risk must have a clear owner, score, response, and next review date."
-        actions={[<Button key="1" className="rounded-2xl">Add risk</Button>, <Button key="2" variant="outline" className="rounded-2xl">Export filtered view</Button>]} />
-      <div className="grid gap-6 xl:grid-cols-[1.45fr_0.9fr]">
-        <Card className="rounded-3xl overflow-hidden">
-          <CardHeader className="border-b"><div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div><CardTitle>Quality risks</CardTitle><CardDescription>Sorted by residual score. Click a row for details.</CardDescription></div><Input value={search} onChange={(e) => setSearch(e.target.value)} className="rounded-2xl w-72" placeholder="Search risks..." /></div></CardHeader>
-          <CardContent className="p-0">
-            <Table><TableHeader><TableRow><TableHead>ID</TableHead><TableHead>Risk</TableHead><TableHead>Component</TableHead><TableHead>Residual</TableHead><TableHead>Owner</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
-              <TableBody>{filtered.map((risk) => (
-                <TableRow key={risk.id} className="cursor-pointer" onClick={() => setSelectedRisk(risk)}>
-                  <TableCell className="font-mono text-xs">{risk.id}</TableCell><TableCell className="font-medium">{risk.title}</TableCell><TableCell>{risk.component}</TableCell>
-                  <TableCell><div className="flex items-center gap-2"><span>{risk.residual}</span><SeverityBadge score={risk.residual} /></div></TableCell>
-                  <TableCell>{risk.owner}</TableCell><TableCell><StatusBadge value={risk.status} /></TableCell>
-                </TableRow>
-              ))}</TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-        <Card className="rounded-3xl"><CardHeader><CardTitle>{selectedRisk.id} — Detail</CardTitle></CardHeader>
-          <CardContent className="space-y-5">
-            <div><div className="flex items-center gap-2 flex-wrap mb-2"><StatusBadge value={selectedRisk.status} /><Badge variant="outline" className="rounded-full">{selectedRisk.component}</Badge><Badge variant="outline" className="rounded-full">{selectedRisk.practice}</Badge></div><h3 className="text-xl font-semibold text-slate-900">{selectedRisk.title}</h3></div>
-            <div className="grid grid-cols-2 gap-3">
-              <Card className="rounded-2xl"><CardContent className="p-4"><div className="text-sm text-slate-500">Inherent</div><div className="text-2xl font-semibold mt-1">{selectedRisk.inherent}</div></CardContent></Card>
-              <Card className="rounded-2xl"><CardContent className="p-4"><div className="text-sm text-slate-500">Residual</div><div className="text-2xl font-semibold mt-1">{selectedRisk.residual}</div></CardContent></Card>
-            </div>
-            <Section title="Description" body={selectedRisk.description} />
-            <Section title="Root cause" body={selectedRisk.rootCause} />
-            <Section title="Owner" body={`${selectedRisk.owner} · Next review ${selectedRisk.nextReview}`} />
-            <div className="flex gap-2 flex-wrap"><Button className="rounded-2xl">Add response</Button><Button variant="outline" className="rounded-2xl">Submit for review</Button><Button variant="outline" className="rounded-2xl">Mark mitigated</Button></div>
-          </CardContent>
-        </Card>
-      </div>
+      <PageHeader eyebrow="Risk Register — CLA Romania" title="Review, score, and manage quality risks"
+        subtitle={`${risks.length} quality risks across ISQM-1 components. Every risk must have a clear owner, score, response, and next review date.`}
+        actions={[<Button key="1" className="rounded-2xl" onClick={() => setPage('Add Risk')}>Add risk</Button>, <Button key="2" variant="outline" className="rounded-2xl">Export</Button>]} />
+      {loading ? <Spinner /> : (
+        <div className="grid gap-6 xl:grid-cols-[1.45fr_0.9fr]">
+          <Card className="rounded-3xl overflow-hidden">
+            <CardHeader className="border-b"><div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div><CardTitle>Quality risks ({activeRisks.length})</CardTitle><CardDescription>Sorted by residual score. Click a row for details.</CardDescription></div><Input value={search} onChange={(e) => setSearch(e.target.value)} className="rounded-2xl w-72" placeholder="Search risks..." /></div></CardHeader>
+            <CardContent className="p-0">
+              {activeRisks.length === 0 ? (
+                <div className="text-center py-12 text-slate-400">
+                  <AlertTriangle className="h-8 w-8 mx-auto mb-3 opacity-30" />
+                  <div className="font-medium">No risks found</div>
+                  <div className="text-sm mt-1">{search ? 'Try a different search' : 'Add your first quality risk'}</div>
+                </div>
+              ) : (
+                <Table><TableHeader><TableRow><TableHead>ID</TableHead><TableHead>Risk</TableHead><TableHead>Component</TableHead><TableHead>Residual</TableHead><TableHead>Owner</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+                  <TableBody>{activeRisks.map(risk => (
+                    <TableRow key={risk.id} className={cn('cursor-pointer', selectedRisk?.id === risk.id && 'bg-slate-50')} onClick={() => setSelectedRisk(risk)}>
+                      <TableCell className="font-mono text-xs">QR-{risk.id}</TableCell>
+                      <TableCell className="font-medium max-w-[280px] truncate">{risk.title}</TableCell>
+                      <TableCell className="text-sm">{risk.component_name}</TableCell>
+                      <TableCell><div className="flex items-center gap-2"><span>{risk.residual_score || '—'}</span><SeverityBadge score={risk.residual_score} /></div></TableCell>
+                      <TableCell className="text-sm">{risk.owner_name || '—'}</TableCell>
+                      <TableCell><StatusBadge value={risk.status} /></TableCell>
+                    </TableRow>
+                  ))}</TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+          {selectedRisk ? (
+            <Card className="rounded-3xl"><CardHeader><CardTitle>QR-{selectedRisk.id} — Detail</CardTitle></CardHeader>
+              <CardContent className="space-y-5">
+                <div><div className="flex items-center gap-2 flex-wrap mb-2"><StatusBadge value={selectedRisk.status} /><Badge variant="outline" className="rounded-full">{selectedRisk.component_name}</Badge>{selectedRisk.practice_name && <Badge variant="outline" className="rounded-full">{selectedRisk.practice_name}</Badge>}</div><h3 className="text-xl font-semibold text-slate-900">{selectedRisk.title}</h3></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Card className="rounded-2xl"><CardContent className="p-4"><div className="text-sm text-slate-500">Inherent</div><div className="text-2xl font-semibold mt-1">{selectedRisk.inherent_score || '—'}</div></CardContent></Card>
+                  <Card className="rounded-2xl"><CardContent className="p-4"><div className="text-sm text-slate-500">Residual</div><div className="text-2xl font-semibold mt-1">{selectedRisk.residual_score || '—'}</div></CardContent></Card>
+                </div>
+                {selectedRisk.description && <Section title="Description" body={selectedRisk.description} />}
+                {selectedRisk.root_cause && <Section title="Root cause" body={selectedRisk.root_cause} />}
+                <Section title="Owner" body={`${selectedRisk.owner_name || '—'} · Next review ${selectedRisk.next_review_date ? new Date(selectedRisk.next_review_date).toLocaleDateString('en-GB') : '—'}`} />
+                <div className="flex gap-2 flex-wrap">
+                  <Button className="rounded-2xl" onClick={() => setPage('Responses & Controls')}>Add response</Button>
+                  <Button variant="outline" className="rounded-2xl">Submit for review</Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="rounded-3xl"><CardContent className="p-12 text-center text-slate-400">Select a risk to view details</CardContent></Card>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
+// ═══════════════════════════════════════════════════════════════
+// ANNUAL ASSESSMENT — live API data + persistence
+// ═══════════════════════════════════════════════════════════════
 function AnnualAssessmentPage() {
   const [step, setStep] = useState('changes');
+  const [risks, setRisks] = useState([]);
+  const [deficiencies, setDeficiencies] = useState([]);
+  const [responses, setResponses] = useState([]);
+  const [assessment, setAssessment] = useState({ summary_of_changes: '', risk_summary: '', deficiency_summary: '', conclusion: '', is_effective: null });
+  const [assessmentId, setAssessmentId] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [riskStatuses, setRiskStatuses] = useState({});
+
+  useEffect(() => {
+    Promise.all([
+      api.get('/api/risks').then(r => r.data).catch(() => []),
+      api.get('/api/monitoring/deficiencies').then(r => r.data).catch(() => []),
+      api.get('/api/responses').then(r => r.data).catch(() => []),
+      api.get('/api/assessment/2026').then(r => r.data).catch(() => null),
+    ]).then(([r, d, resp, existing]) => {
+      setRisks(r); setDeficiencies(d); setResponses(resp);
+      if (existing) {
+        setAssessment({ summary_of_changes: existing.summary_of_changes || '', risk_summary: existing.risk_summary || '', deficiency_summary: existing.deficiency_summary || '', conclusion: existing.conclusion || '', is_effective: existing.is_effective });
+        setAssessmentId(existing.id);
+        try { setRiskStatuses(JSON.parse(existing.risk_summary) || {}); } catch(e) {}
+      }
+      setLoading(false);
+    });
+  }, []);
+
+  function saveAssessment() {
+    setSaving(true);
+    const payload = { ...assessment, year: 2026, risk_summary: JSON.stringify(riskStatuses) };
+    const req = assessmentId
+      ? api.put(`/api/assessment/${assessmentId}`, payload)
+      : api.post('/api/assessment', payload);
+    req.then(r => { if (r.data?.id) setAssessmentId(r.data.id); setSaving(false); alert('Assessment saved.'); })
+      .catch(() => { setSaving(false); alert('Save failed.'); });
+  }
+
+  if (loading) return <Spinner />;
+
+  const activeRisks = risks.filter(r => r.status !== 'archived');
+  const openDef = deficiencies.filter(d => d.status !== 'closed');
+
   return (
     <div>
-      <PageHeader eyebrow="Annual Assessment — CLA Romania" title="ISQM-1 annual evaluation" subtitle="Review changes, risks, deficiencies, response effectiveness, and conclude whether the SoQM provides reasonable assurance. Target: December 2026."
-        actions={[<Button key="1" className="rounded-2xl">Generate assessment report</Button>]} />
+      <PageHeader eyebrow="Annual Assessment — CLA Romania" title="ISQM-1 annual evaluation"
+        subtitle={`Review changes, ${activeRisks.length} risks, ${openDef.length} open deficiencies, ${responses.length} responses. Target: December 2026.`}
+        actions={[
+          <Button key="1" className="rounded-2xl" onClick={saveAssessment} disabled={saving}>
+            {saving ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving...</> : <><Save className="h-4 w-4 mr-2" />Save assessment</>}
+          </Button>
+        ]} />
       <Tabs value={step} onValueChange={setStep} className="space-y-6">
         <TabsList className="grid grid-cols-2 lg:grid-cols-6 rounded-2xl h-auto p-1">
-          <TabsTrigger value="changes" className="rounded-xl">1. Changes</TabsTrigger><TabsTrigger value="risks" className="rounded-xl">2. Risks</TabsTrigger><TabsTrigger value="deficiencies" className="rounded-xl">3. Deficiencies</TabsTrigger><TabsTrigger value="responses" className="rounded-xl">4. Responses</TabsTrigger><TabsTrigger value="conclusion" className="rounded-xl">5. Conclusion</TabsTrigger><TabsTrigger value="signoff" className="rounded-xl">6. Sign-off</TabsTrigger>
+          <TabsTrigger value="changes" className="rounded-xl">1. Changes</TabsTrigger>
+          <TabsTrigger value="risks" className="rounded-xl">2. Risks ({activeRisks.length})</TabsTrigger>
+          <TabsTrigger value="deficiencies" className="rounded-xl">3. Deficiencies ({openDef.length})</TabsTrigger>
+          <TabsTrigger value="responses" className="rounded-xl">4. Responses ({responses.length})</TabsTrigger>
+          <TabsTrigger value="conclusion" className="rounded-xl">5. Conclusion</TabsTrigger>
+          <TabsTrigger value="signoff" className="rounded-xl">6. Sign-off</TabsTrigger>
         </TabsList>
-        <TabsContent value="changes"><Card className="rounded-3xl"><CardHeader><CardTitle>Changes in circumstances — CLA Romania 2026</CardTitle><CardDescription>What changed in services, staffing, systems, governance.</CardDescription></CardHeader>
-          <CardContent className="grid gap-4 lg:grid-cols-2">
-            <Textarea className="min-h-36 rounded-2xl" defaultValue="Services: Added Transfer Pricing and M&A Transaction advisory. Expanded BPS outsourcing scope. AI Hub deployed (24 tools). CaseWare Cloud migration completed." />
-            <Textarea className="min-h-36 rounded-2xl" defaultValue="Staffing: 2 open audit positions. Alina Artemenko joined as AI & Technology manager. Qasim Razvan promoted to Senior Manager (BPS). Staff count: 42." />
+
+        <TabsContent value="changes"><Card className="rounded-3xl"><CardHeader><CardTitle>Changes in circumstances — 2026</CardTitle><CardDescription>What changed in services, staffing, systems, governance.</CardDescription></CardHeader>
+          <CardContent>
+            <Textarea className="min-h-48 rounded-2xl" value={assessment.summary_of_changes} onChange={e => setAssessment(a => ({...a, summary_of_changes: e.target.value}))} placeholder="Describe changes in services, staffing, systems, and governance that occurred during the assessment period..." />
           </CardContent></Card>
         </TabsContent>
-        <TabsContent value="risks"><Card className="rounded-3xl"><CardHeader><CardTitle>Risk review</CardTitle><CardDescription>Assess high residual risks and newly added risks.</CardDescription></CardHeader>
-          <CardContent className="space-y-4">{SAMPLE_RISKS.map((risk) => (
-            <div key={risk.id} className="rounded-2xl border p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div><div className="font-medium text-slate-900">{risk.id} — {risk.title}</div><div className="text-sm text-slate-500 mt-1">{risk.component} · {risk.owner} · Residual {risk.residual}</div></div>
-              <div className="flex gap-2 flex-wrap">{['Unchanged', 'Increased', 'Decreased', 'Closed'].map((l) => <Button key={l} variant="outline" className="rounded-2xl">{l}</Button>)}</div>
-            </div>
-          ))}</CardContent></Card>
+
+        <TabsContent value="risks"><Card className="rounded-3xl"><CardHeader><CardTitle>Risk review</CardTitle><CardDescription>Assess each risk — has it changed since last period?</CardDescription></CardHeader>
+          <CardContent className="space-y-4">
+            {activeRisks.length === 0 ? <div className="text-sm text-slate-400 text-center py-8">No risks to review. Add risks in the Risk Register first.</div> : activeRisks.map(risk => (
+              <div key={risk.id} className="rounded-2xl border p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div><div className="font-medium text-slate-900">QR-{risk.id} — {risk.title}</div><div className="text-sm text-slate-500 mt-1">{risk.component_name} · {risk.owner_name || '—'} · Residual {risk.residual_score || '—'}</div></div>
+                <div className="flex gap-2 flex-wrap">{['Unchanged', 'Increased', 'Decreased', 'Closed'].map(l => (
+                  <Button key={l} variant={riskStatuses[risk.id] === l ? 'default' : 'outline'} className="rounded-2xl" onClick={() => setRiskStatuses(s => ({...s, [risk.id]: l}))}>{l}</Button>
+                ))}</div>
+              </div>
+            ))}
+          </CardContent></Card>
         </TabsContent>
-        <TabsContent value="deficiencies"><Card className="rounded-3xl"><CardHeader><CardTitle>Deficiency review — CLA Romania</CardTitle></CardHeader>
-          <CardContent className="space-y-4">{[
-            ['DEF-001: Audit file review notes not cleared (Engagement A)', 'High', 'In remediation'],
-            ['DEF-002: Engagement letters missing 2026 terms', 'Minor', 'Remediated'],
-            ['DEF-003: CPD shortfall for 2 staff', 'Moderate', 'In remediation'],
-            ['DEF-004: CaseWare TB mapping exceptions (Engagement B)', 'Minor', 'Open'],
-          ].map(([item, sev, status]) => (
-            <div key={item} className="rounded-2xl border p-4 flex items-center justify-between gap-4"><div><div className="font-medium">{item}</div><div className="text-sm text-slate-500 mt-1">{sev} severity</div></div><StatusBadge value={status === 'Remediated' ? 'Approved' : status === 'Open' ? 'Active' : 'In Review'} /></div>
-          ))}</CardContent></Card>
+
+        <TabsContent value="deficiencies"><Card className="rounded-3xl"><CardHeader><CardTitle>Deficiency review</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            {deficiencies.length === 0 ? <div className="text-sm text-slate-400 text-center py-8">No deficiencies recorded.</div> : deficiencies.map(d => (
+              <div key={d.id} className="rounded-2xl border p-4 flex items-center justify-between gap-4">
+                <div><div className="font-medium">{d.title}</div><div className="text-sm text-slate-500 mt-1">{d.severity} severity · {d.root_cause || 'No root cause documented'}</div></div>
+                <StatusBadge value={d.status === 'closed' ? 'Approved' : d.status === 'open' ? 'Active' : 'In Review'} />
+              </div>
+            ))}
+          </CardContent></Card>
         </TabsContent>
+
         <TabsContent value="responses"><Card className="rounded-3xl"><CardHeader><CardTitle>Response effectiveness</CardTitle></CardHeader>
-          <CardContent className="space-y-4">{[
-            ['Cold file review programme (3 files/quarter)', 'Effective'],
-            ['Independence confirmation process (annual)', 'Effective'],
-            ['Client acceptance AML/KYC integration', 'Unknown'],
-            ['Consultation escalation protocol', 'Effective'],
-            ['CaseWare file assembly 60-day tracking', 'Effective'],
-            ['Root cause analysis process', 'Ineffective'],
-          ].map(([name, status]) => (
-            <div key={name} className="rounded-2xl border p-4 flex items-center justify-between gap-4"><div><div className="font-medium">{name}</div></div><StatusBadge value={status === 'Effective' ? 'Approved' : status === 'Ineffective' ? 'Active' : 'Draft'} /></div>
-          ))}</CardContent></Card>
+          <CardContent className="space-y-4">
+            {responses.length === 0 ? <div className="text-sm text-slate-400 text-center py-8">No responses recorded.</div> : responses.map(r => (
+              <div key={r.id} className="rounded-2xl border p-4 flex items-center justify-between gap-4">
+                <div><div className="font-medium">{r.title}</div><div className="text-sm text-slate-500 mt-1">{r.description ? r.description.substring(0, 80) : 'No description'}</div></div>
+                <StatusBadge value={r.status === 'implemented' ? 'Approved' : r.status === 'draft' ? 'Draft' : 'In Review'} />
+              </div>
+            ))}
+          </CardContent></Card>
         </TabsContent>
+
         <TabsContent value="conclusion"><Card className="rounded-3xl"><CardHeader><CardTitle>Draft conclusion</CardTitle></CardHeader>
-          <CardContent><Textarea className="min-h-72 rounded-2xl" defaultValue={`Based on the procedures performed during the period from January to December 2026, CLA Romania concludes that the System of Quality Management provides reasonable assurance that the objectives of the system are being achieved, except for:\n\n1. Root cause analysis process — not yet applied to Q1 cold file review findings (remediation target: Q2 2026)\n2. Client acceptance review — Q1 review overdue (immediate action required)\n\nThese matters have been communicated to relevant partners with assigned remediation actions and deadlines. The firm will re-assess effectiveness in the Q2 monitoring cycle.\n\nSigned: Ionut Zeche, Managing Partner\nReviewed: Laurentiu Vasile, Quality & Risk Partner`} /></CardContent></Card>
+          <CardContent>
+            <Textarea className="min-h-72 rounded-2xl" value={assessment.conclusion} onChange={e => setAssessment(a => ({...a, conclusion: e.target.value}))} placeholder="Based on the procedures performed during the assessment period, conclude whether the SoQM provides reasonable assurance..." />
+          </CardContent></Card>
         </TabsContent>
-        <TabsContent value="signoff"><Card className="rounded-3xl"><CardHeader><CardTitle>Sign-off — CLA Romania</CardTitle></CardHeader>
+
+        <TabsContent value="signoff"><Card className="rounded-3xl"><CardHeader><CardTitle>Sign-off</CardTitle></CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid gap-4 lg:grid-cols-3"><Input className="rounded-2xl" defaultValue="Laurentiu Vasile — Quality Partner" /><Input className="rounded-2xl" defaultValue="Laurentiu Vasile — Quality Partner" /><Input className="rounded-2xl" defaultValue="Partner Board" /></div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="rounded-2xl border p-4"><div className="text-sm text-slate-500 mb-2">Assessment conclusion</div><div className="font-medium">{assessment.is_effective === true ? 'Effective' : assessment.is_effective === false ? 'Not effective' : 'Not yet determined'}</div></div>
+              <div className="flex gap-3">
+                <Button variant={assessment.is_effective === true ? 'default' : 'outline'} className="rounded-2xl flex-1" onClick={() => setAssessment(a => ({...a, is_effective: true}))}>Effective</Button>
+                <Button variant={assessment.is_effective === false ? 'default' : 'outline'} className="rounded-2xl flex-1" onClick={() => setAssessment(a => ({...a, is_effective: false}))}>Not effective</Button>
+              </div>
+            </div>
             <div className="flex items-start gap-3 rounded-2xl border p-4"><Checkbox id="declare" className="mt-1" /><label htmlFor="declare" className="text-sm text-slate-700 leading-6">I confirm that the annual assessment has considered changes in circumstances, open deficiencies, response effectiveness, and unresolved high-risk matters before approval. This assessment is submitted for CAFR compliance.</label></div>
-            <Button className="rounded-2xl">Approve annual assessment</Button>
+            <Button className="rounded-2xl" onClick={saveAssessment} disabled={saving}>{saving ? 'Saving...' : 'Approve annual assessment'}</Button>
           </CardContent></Card>
         </TabsContent>
       </Tabs>
@@ -287,32 +433,63 @@ function AnnualAssessmentPage() {
   );
 }
 
-function DocumentsPage() {
+// ═══════════════════════════════════════════════════════════════
+// FIRM SETUP — live API data + persistence
+// ═══════════════════════════════════════════════════════════════
+function FirmSetupPage() {
+  const [org, setOrg] = useState({ name: '', jurisdiction: '', legal_structure: '', network: '', description: '', partner_count: '', staff_count: '' });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    api.get('/api/organization').then(r => {
+      if (r.data) setOrg({ name: r.data.name || '', jurisdiction: r.data.jurisdiction || '', legal_structure: r.data.legal_structure || '', network: r.data.network || '', description: r.data.description || '', partner_count: r.data.partner_count || '', staff_count: r.data.staff_count || '' });
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  function saveOrg() {
+    setSaving(true);
+    api.put('/api/organization', org)
+      .then(() => { setSaving(false); alert('Firm profile saved.'); })
+      .catch(() => { setSaving(false); alert('Save failed.'); });
+  }
+
+  function field(label, key, type) {
+    return (
+      <div>
+        <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">{label}</div>
+        {type === 'textarea'
+          ? <Textarea className="rounded-2xl min-h-32" value={org[key]} onChange={e => setOrg(o => ({...o, [key]: e.target.value}))} />
+          : <Input className="rounded-2xl" value={org[key]} onChange={e => setOrg(o => ({...o, [key]: e.target.value}))} />}
+      </div>
+    );
+  }
+
+  if (loading) return <Spinner />;
+
   return (
     <div>
-      <PageHeader eyebrow="Documents — CLA Romania" title="Generate and govern ISQM-1 outputs" subtitle="Documents generated from structured system data. Approved versions are immutable."
-        actions={[<Button key="1" className="rounded-2xl">Generate document</Button>, <Button key="2" variant="outline" className="rounded-2xl">Export PDF</Button>]} />
-      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.3fr_0.8fr]">
-        <Card className="rounded-3xl"><CardHeader><CardTitle>Document types</CardTitle></CardHeader>
-          <CardContent className="space-y-2">{DOCUMENTS.map((doc) => (
-            <button key={doc.name} className="w-full rounded-2xl border p-4 text-left hover:bg-slate-50 transition"><div className="font-medium text-slate-900">{doc.name}</div><div className="text-sm text-slate-500 mt-1">{doc.version} · {doc.status} · {doc.date}</div></button>
+      <PageHeader eyebrow="Firm Setup — CLA Romania" title="Firm context for the quality system" subtitle="ISQM-1 requires the SoQM to reflect the nature and circumstances of the firm."
+        actions={[<Button key="1" className="rounded-2xl" onClick={saveOrg} disabled={saving}>{saving ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving...</> : <><Save className="h-4 w-4 mr-2" />Save profile</>}</Button>]} />
+      <div className="grid gap-6 xl:grid-cols-[0.8fr_1.4fr]">
+        <Card className="rounded-3xl"><CardHeader><CardTitle>Setup progress</CardTitle></CardHeader>
+          <CardContent className="space-y-4">{[
+            ['Firm Profile', !!org.name], ['Jurisdiction', !!org.jurisdiction], ['Legal Structure', !!org.legal_structure],
+            ['Network', !!org.network], ['Partners & Staff', !!org.partner_count], ['Description', !!org.description],
+          ].map(([label, done]) => (
+            <div key={label} className="flex items-center justify-between rounded-2xl border p-4"><span className="text-sm font-medium text-slate-700">{label}</span>{done ? <Badge className="rounded-full bg-emerald-100 text-emerald-700">Complete</Badge> : <Badge className="rounded-full bg-amber-100 text-amber-700">Pending</Badge>}</div>
           ))}</CardContent>
         </Card>
-        <Card className="rounded-3xl"><CardHeader><CardTitle>Preview</CardTitle><CardDescription>ISQM-1 Manual — CLA Romania</CardDescription></CardHeader>
-          <CardContent><div className="rounded-2xl border bg-slate-50 p-6 min-h-[420px] space-y-4">
-            <div className="text-xs uppercase tracking-wide text-slate-500">Section 1</div>
-            <h3 className="text-2xl font-semibold">Nature and circumstances of the firm</h3>
-            <p className="text-slate-700 leading-7">CLA Romania SRL is a member firm of CLA Global, registered in Bucharest. The firm delivers Audit, Tax Compliance, Tax Advisory, BPS, Legal, Transfer Pricing, Mobility, and M&A services through 42 professionals across 8 practices. The firm's audit practice serves 8 statutory audit clients and is supervised by CAFR (Camera Auditorilor Financiari din Romania).</p>
-            <Separator />
-            <div className="text-xs uppercase tracking-wide text-slate-500">Section 2</div>
-            <h3 className="text-xl font-semibold">Governance and leadership</h3>
-            <p className="text-slate-700 leading-7">Quality governance is led by Laurentiu Vasile as Quality & Risk Partner. Quality is discussed at every partner meeting and forms part of partner performance evaluation.</p>
-          </div></CardContent>
-        </Card>
-        <Card className="rounded-3xl"><CardHeader><CardTitle>Metadata</CardTitle></CardHeader>
-          <CardContent className="space-y-4 text-sm">
-            <MetaRow label="Version" value="v1 (Draft)" /><MetaRow label="Status" value="Draft" /><MetaRow label="Generated" value="27 Mar 2026" /><MetaRow label="Generated by" value="Laurentiu Vasile" /><MetaRow label="Firm" value="CLA Romania SRL" /><MetaRow label="Regulator" value="CAFR" />
-            <Separator /><div className="flex flex-col gap-2"><Button className="rounded-2xl">Approve version</Button><Button variant="outline" className="rounded-2xl">Save as new version</Button></div>
+        <Card className="rounded-3xl"><CardHeader><CardTitle>Firm profile</CardTitle></CardHeader>
+          <CardContent className="grid gap-4 lg:grid-cols-2">
+            {field('Firm name', 'name')}
+            {field('Jurisdiction', 'jurisdiction')}
+            {field('Legal structure', 'legal_structure')}
+            {field('Network', 'network')}
+            {field('Partner count', 'partner_count')}
+            {field('Staff count', 'staff_count')}
+            <div className="lg:col-span-2">{field('Description', 'description', 'textarea')}</div>
           </CardContent>
         </Card>
       </div>
@@ -320,20 +497,35 @@ function DocumentsPage() {
   );
 }
 
-function FirmSetupPage() {
+// ═══════════════════════════════════════════════════════════════
+// DOCUMENTS (unchanged — static for now)
+// ═══════════════════════════════════════════════════════════════
+function DocumentsPage() {
   return (
     <div>
-      <PageHeader eyebrow="Firm Setup — CLA Romania" title="Firm context for the quality system" subtitle="ISQM-1 requires the SoQM to reflect the nature and circumstances of the firm." actions={[<Button key="1" className="rounded-2xl">Save and continue</Button>]} />
-      <div className="grid gap-6 xl:grid-cols-[0.8fr_1.4fr]">
-        <Card className="rounded-3xl"><CardHeader><CardTitle>Setup progress</CardTitle></CardHeader>
-          <CardContent className="space-y-4">{[['Firm Profile', true], ['Offices', true], ['Practices', true], ['Service Lines', true], ['Governance Roles', true], ['Technology & Outsourcing', false], ['Review', false]].map(([label, done]) => (
-            <div key={label} className="flex items-center justify-between rounded-2xl border p-4"><span className="text-sm font-medium text-slate-700">{label}</span>{done ? <Badge className="rounded-full bg-emerald-100 text-emerald-700">Complete</Badge> : <Badge className="rounded-full bg-amber-100 text-amber-700">Pending</Badge>}</div>
+      <PageHeader eyebrow="Documents — CLA Romania" title="Generate and govern ISQM-1 outputs" subtitle="Documents generated from structured system data. Approved versions are immutable."
+        actions={[<Button key="1" className="rounded-2xl">Generate document</Button>, <Button key="2" variant="outline" className="rounded-2xl">Export PDF</Button>]} />
+      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.3fr_0.8fr]">
+        <Card className="rounded-3xl"><CardHeader><CardTitle>Document types</CardTitle></CardHeader>
+          <CardContent className="space-y-2">{DOCUMENTS.map(doc => (
+            <button key={doc.name} className="w-full rounded-2xl border p-4 text-left hover:bg-slate-50 transition"><div className="font-medium text-slate-900">{doc.name}</div><div className="text-sm text-slate-500 mt-1">{doc.version} · {doc.status} · {doc.date}</div></button>
           ))}</CardContent>
         </Card>
-        <Card className="rounded-3xl"><CardHeader><CardTitle>Firm profile</CardTitle></CardHeader>
-          <CardContent className="grid gap-4 lg:grid-cols-2">
-            <Input className="rounded-2xl" defaultValue="CLA Romania SRL" /><Input className="rounded-2xl" defaultValue="Romania" /><Input className="rounded-2xl" defaultValue="SRL (limited liability)" /><Input className="rounded-2xl" defaultValue="CLA Global" /><Input className="rounded-2xl" defaultValue="4 partners" /><Input className="rounded-2xl" defaultValue="42 staff" />
-            <Textarea className="rounded-2xl lg:col-span-2 min-h-32" defaultValue="CLA Romania delivers Audit, Tax, BPS, Legal, Advisory, Transfer Pricing, Mobility, and M&A services. Registered at Green Court, Building C, 4D Gara Herastrau, 020334, Bucharest. CAFR-regulated for statutory audit. CaseWare Cloud for audit engagement files. AI Hub (24 tools) deployed March 2026." />
+        <Card className="rounded-3xl"><CardHeader><CardTitle>Preview</CardTitle><CardDescription>ISQM-1 Manual — CLA Romania</CardDescription></CardHeader>
+          <CardContent><div className="rounded-2xl border bg-slate-50 p-6 min-h-[420px] space-y-4">
+            <div className="text-xs uppercase tracking-wide text-slate-500">Section 1</div>
+            <h3 className="text-2xl font-semibold">Nature and circumstances of the firm</h3>
+            <p className="text-slate-700 leading-7">CLA Romania SRL is a member firm of CLA Global, registered in Bucharest. The firm delivers Audit, Tax Compliance, Tax Advisory, BPS, Legal, Transfer Pricing, Mobility, and M&A services through 42 professionals across 8 practices.</p>
+            <Separator />
+            <div className="text-xs uppercase tracking-wide text-slate-500">Section 2</div>
+            <h3 className="text-xl font-semibold">Governance and leadership</h3>
+            <p className="text-slate-700 leading-7">Quality governance is led by the Quality & Risk Partner. Quality is discussed at every partner meeting and forms part of partner performance evaluation.</p>
+          </div></CardContent>
+        </Card>
+        <Card className="rounded-3xl"><CardHeader><CardTitle>Metadata</CardTitle></CardHeader>
+          <CardContent className="space-y-4 text-sm">
+            <MetaRow label="Version" value="v1 (Draft)" /><MetaRow label="Status" value="Draft" /><MetaRow label="Generated" value="27 Mar 2026" /><MetaRow label="Firm" value="CLA Romania SRL" /><MetaRow label="Regulator" value="CAFR" />
+            <Separator /><div className="flex flex-col gap-2"><Button className="rounded-2xl">Approve version</Button><Button variant="outline" className="rounded-2xl">Save as new version</Button></div>
           </CardContent>
         </Card>
       </div>
@@ -348,25 +540,36 @@ function PlaceholderPage({ title, subtitle, icon: Icon }) {
       <Card className="rounded-3xl"><CardContent className="p-10 flex flex-col items-center justify-center text-center min-h-[420px]">
         <div className="h-16 w-16 rounded-3xl bg-slate-100 flex items-center justify-center mb-4"><Icon className="h-8 w-8 text-slate-700" /></div>
         <h3 className="text-2xl font-semibold text-slate-900">Coming in Wave 2</h3>
-        <p className="text-slate-600 mt-3 max-w-2xl">This module follows the same design patterns as Dashboard, Risk Register, and Annual Assessment. It will be connected to the PostgreSQL backend with full CRUD, audit trail, and sign-off workflows.</p>
+        <p className="text-slate-600 mt-3 max-w-2xl">This module follows the same design patterns and will be connected to the PostgreSQL backend with full CRUD, audit trail, and sign-off workflows.</p>
       </CardContent></Card>
     </div>
   );
 }
 
+// ═══════════════════════════════════════════════════════════════
+// APP SHELL
+// ═══════════════════════════════════════════════════════════════
 export default function App() {
   const [page, setPage] = useState('Dashboard');
   const [user, setUser] = useState(null);
+  const [readiness, setReadiness] = useState(0);
 
-  // Check for existing session
-  React.useEffect(() => {
+  useEffect(() => {
     const token = localStorage.getItem('isqm_token');
     if (token) {
-      import('@/api').then(({ default: api }) => {
-        api.get('/api/auth/me').then(r => setUser(r.data)).catch(() => { localStorage.removeItem('isqm_token'); });
-      });
+      api.get('/api/auth/me').then(r => setUser(r.data)).catch(() => { localStorage.removeItem('isqm_token'); });
     }
   }, []);
+
+  // Compute readiness from objectives
+  useEffect(() => {
+    if (!user) return;
+    api.get('/api/objectives').then(r => {
+      const obj = r.data || [];
+      const impl = obj.filter(o => o.status === 'implemented').length;
+      setReadiness(obj.length ? Math.round((impl / obj.length) * 100) : 0);
+    }).catch(() => {});
+  }, [user, page]);
 
   function handleLogout() { localStorage.removeItem('isqm_token'); setUser(null); }
   if (!user) return <LoginPage onLogin={setUser} />;
@@ -375,7 +578,7 @@ export default function App() {
     Dashboard: <DashboardPage setPage={setPage} />,
     'Firm Setup': <FirmSetupPage />,
     'Quality System': <QualitySystemPage />,
-    'Risk Register': <RiskRegisterPage />,
+    'Risk Register': <RiskRegisterPage setPage={setPage} />,
     'Responses & Controls': <ResponsesControlsPage />,
     Monitoring: <MonitoringPage />,
     Deficiencies: <DeficienciesPage />,
@@ -390,7 +593,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="flex min-h-screen">
-        <Sidebar page={page} setPage={setPage} onLogout={handleLogout} />
+        <Sidebar page={page} setPage={setPage} onLogout={handleLogout} readiness={readiness} />
         <main className="flex-1 min-w-0"><TopBar user={user} /><div className="p-6 lg:p-8">{pages[page] || <DashboardPage setPage={setPage} />}</div></main>
       </div>
     </div>
