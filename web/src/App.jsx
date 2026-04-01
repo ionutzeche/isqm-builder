@@ -230,6 +230,34 @@ function RiskRegisterPage({ setPage }) {
 
   useEffect(() => { loadRisks(); }, [loadRisks]);
 
+  function updateRiskStatus(id, status) {
+    api.put('/api/risks/' + id, { status }).then(() => loadRisks()).catch(err => alert(err.response?.data?.error || 'Failed'));
+  }
+
+  function archiveRisk(id) {
+    if (!confirm('Archive this risk? It will be hidden from the active register.')) return;
+    api.delete('/api/risks/' + id).then(() => { setSelectedRisk(null); loadRisks(); }).catch(err => alert(err.response?.data?.error || 'Failed'));
+  }
+
+  function exportRisks(riskList) {
+    const csv = 'ID,Title,Component,Practice,Inherent Score,Residual Score,Owner,Status,Description,Root Cause,Next Review\n' +
+      riskList.map(r => '"QR-' + r.id + '","' + (r.title || '') + '","' + (r.component_name || '') + '","' + (r.practice_name || '') + '",' + (r.inherent_score || '') + ',' + (r.residual_score || '') + ',"' + (r.owner_name || '') + '","' + (r.status || '') + '","' + (r.description || '').replace(/"/g, '""') + '","' + (r.root_cause || '').replace(/"/g, '""') + '","' + (r.next_review_date || '') + '"').join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'cla-quality-risks-' + new Date().toISOString().split('T')[0] + '.csv';
+    a.click();
+  }
+
+  // Load risk detail with linked responses
+  useEffect(() => {
+    if (selectedRisk?.id) {
+      api.get('/api/risks/' + selectedRisk.id).then(r => {
+        setSelectedRisk(prev => ({ ...prev, responses: r.data.responses || [] }));
+      }).catch(() => {});
+    }
+  }, [selectedRisk?.id]);
+
   const filtered = useMemo(() => risks.filter(r => {
     if (!search) return true;
     const q = search.toLowerCase();
@@ -242,7 +270,7 @@ function RiskRegisterPage({ setPage }) {
     <div>
       <PageHeader eyebrow="Risk Register — CLA Romania" title="Review, score, and manage quality risks"
         subtitle={`${risks.length} quality risks across ISQM-1 components. Every risk must have a clear owner, score, response, and next review date.`}
-        actions={[<Button key="1" className="rounded-2xl" onClick={() => setPage('Add Risk')}>Add risk</Button>, <Button key="2" variant="outline" className="rounded-2xl">Export</Button>]} />
+        actions={[<Button key="1" className="rounded-2xl" onClick={() => setPage('Add Risk')}>Add risk</Button>, <Button key="2" variant="outline" className="rounded-2xl" onClick={() => exportRisks(risks)}>Export CSV</Button>]} />
       {loading ? <Spinner /> : (
         <div className="grid gap-6 xl:grid-cols-[1.45fr_0.9fr]">
           <Card className="rounded-3xl overflow-hidden">
@@ -271,19 +299,28 @@ function RiskRegisterPage({ setPage }) {
             </CardContent>
           </Card>
           {selectedRisk ? (
-            <Card className="rounded-3xl"><CardHeader><CardTitle>QR-{selectedRisk.id} — Detail</CardTitle></CardHeader>
-              <CardContent className="space-y-5">
-                <div><div className="flex items-center gap-2 flex-wrap mb-2"><StatusBadge value={selectedRisk.status} /><Badge variant="outline" className="rounded-full">{selectedRisk.component_name}</Badge>{selectedRisk.practice_name && <Badge variant="outline" className="rounded-full">{selectedRisk.practice_name}</Badge>}</div><h3 className="text-xl font-semibold text-slate-900">{selectedRisk.title}</h3></div>
+            <Card className="rounded-3xl"><CardHeader><div className="flex items-center justify-between"><CardTitle>QR-{selectedRisk.id}</CardTitle><div className="flex gap-2">
+              <select className="text-xs border border-slate-200 rounded-lg px-2 py-1 bg-white" value={selectedRisk.status} onChange={e => updateRiskStatus(selectedRisk.id, e.target.value)}>
+                <option value="active">Active</option><option value="mitigated">Mitigated</option><option value="archived">Archived</option>
+              </select></div></div></CardHeader>
+              <CardContent className="space-y-4">
+                <div><div className="flex items-center gap-2 flex-wrap mb-2"><StatusBadge value={selectedRisk.status} /><Badge variant="outline" className="rounded-full">{selectedRisk.component_name}</Badge>{selectedRisk.practice_name && <Badge variant="outline" className="rounded-full">{selectedRisk.practice_name}</Badge>}</div><h3 className="text-lg font-semibold text-slate-900">{selectedRisk.title}</h3></div>
                 <div className="grid grid-cols-2 gap-3">
-                  <Card className="rounded-2xl"><CardContent className="p-4"><div className="text-sm text-slate-500">Inherent</div><div className="text-2xl font-semibold mt-1">{selectedRisk.inherent_score || '—'}</div></CardContent></Card>
-                  <Card className="rounded-2xl"><CardContent className="p-4"><div className="text-sm text-slate-500">Residual</div><div className="text-2xl font-semibold mt-1">{selectedRisk.residual_score || '—'}</div></CardContent></Card>
+                  <Card className="rounded-2xl"><CardContent className="p-3"><div className="text-xs text-slate-500">Inherent score</div><div className="text-xl font-semibold mt-1">{selectedRisk.inherent_score || '—'}</div><SeverityBadge score={selectedRisk.inherent_score} /></CardContent></Card>
+                  <Card className="rounded-2xl"><CardContent className="p-3"><div className="text-xs text-slate-500">Residual score</div><div className="text-xl font-semibold mt-1">{selectedRisk.residual_score || '—'}</div><SeverityBadge score={selectedRisk.residual_score} /></CardContent></Card>
                 </div>
                 {selectedRisk.description && <Section title="Description" body={selectedRisk.description} />}
                 {selectedRisk.root_cause && <Section title="Root cause" body={selectedRisk.root_cause} />}
                 <Section title="Owner" body={`${selectedRisk.owner_name || '—'} · Next review ${selectedRisk.next_review_date ? new Date(selectedRisk.next_review_date).toLocaleDateString('en-GB') : '—'}`} />
-                <div className="flex gap-2 flex-wrap">
-                  <Button className="rounded-2xl" onClick={() => setPage('Responses & Controls')}>Add response</Button>
-                  <Button variant="outline" className="rounded-2xl">Submit for review</Button>
+                {selectedRisk.responses && selectedRisk.responses.length > 0 && (
+                  <div><div className="text-sm text-slate-500 mb-2">Linked responses ({selectedRisk.responses.length})</div>
+                    {selectedRisk.responses.map(r => <div key={r.id} className="rounded-xl border p-3 mb-2 text-sm"><div className="font-medium text-slate-900">{r.title}</div><div className="text-xs text-slate-500 mt-1">{r.frequency} · {r.effectiveness_status || 'Unknown'}</div></div>)}
+                  </div>
+                )}
+                <div className="flex gap-2 flex-wrap pt-2">
+                  <Button className="rounded-2xl" onClick={() => setPage('Responses & Controls')}>Link response</Button>
+                  <Button variant="outline" className="rounded-2xl" onClick={() => { setPage('Add Risk'); /* TODO: prefill edit form */ }}>Edit full details</Button>
+                  <Button variant="outline" className="rounded-2xl text-rose-600 border-rose-200 hover:bg-rose-50" onClick={() => archiveRisk(selectedRisk.id)}>Archive</Button>
                 </div>
               </CardContent>
             </Card>
